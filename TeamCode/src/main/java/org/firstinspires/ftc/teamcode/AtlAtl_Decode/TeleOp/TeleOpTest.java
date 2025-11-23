@@ -1,9 +1,11 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
+@TeleOp
 public class TeleOpTest extends OpMode {
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
     private DcMotorEx intake, topIntake;
