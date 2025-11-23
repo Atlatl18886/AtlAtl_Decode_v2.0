@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 public class TeleOpTest extends OpMode {
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
-    private DcMotorEx bottomIntake, topIntake;
+    private DcMotorEx intake, topIntake;
     private DcMotorEx transfer;
     private DcMotorEx shooter;
 
@@ -29,11 +29,9 @@ public class TeleOpTest extends OpMode {
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //Initialize Intakes -----------------------------------------------------
-        bottomIntake = hardwareMap.get(DcMotorEx.class, "bIntake");
-        topIntake = hardwareMap.get(DcMotorEx.class, "tIntake");
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
 
-        bottomIntake.setDirection(DcMotorEx.Direction.FORWARD);
-        topIntake.setDirection(DcMotorEx.Direction.FORWARD);
+        intake.setDirection(DcMotorEx.Direction.FORWARD);
 
         //Initialize Transfer -----------------------------------------------------
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
@@ -82,13 +80,13 @@ public class TeleOpTest extends OpMode {
         //optionally you can have it default to intake always on by putting that in the else case
         if (gamepad1.a) {
             topIntake.setPower(0.9);
-            bottomIntake.setPower(0.9);
+            intake.setPower(0.9);
         } else if (gamepad1.y) {
             topIntake.setPower(-0.9);
-            bottomIntake.setPower(-0.9);
+            intake.setPower(-0.9);
         } else {
             topIntake.setPower(0);
-            bottomIntake.setPower(0);
+            intake.setPower(0);
         }
     }
 
