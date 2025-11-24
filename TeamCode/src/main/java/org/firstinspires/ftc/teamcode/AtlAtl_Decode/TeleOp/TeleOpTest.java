@@ -70,14 +70,15 @@ public class TeleOpTest extends OpMode {
 
     @Override
     public void loop() {
-        // @param {String} PRESET - "QUADRATIC", "LINEAR" - default, old, "EXPONENTIAL", "LERP" - smooth linear
+        //jsdoc bec its cool
+        // @param {String} PRESET - "QUADRATIC", "LINEAR" - default, old, "EXPONENTIAL", "LERP" - smooth linear, CAN ADD DRIFT
         // @param {int} DEADZONE - 0.05 would mean the first 5% of joystick movement is ignored, prevents accidentals
-        Drive("QUADRATIC", 0.05);
+        Drive("LERP", 0.05);
         Intake();
         Transfer();
         Shooter();
 
-        // telemetry for debug
+        // telemetry for debug with imu
         telemetry.addData("Current Heading", "%.2f", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
         telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
     }
@@ -90,6 +91,7 @@ public class TeleOpTest extends OpMode {
         double strafe, vertical, heading;
 
         if (PRESET.equals("LERP")) {
+
             // lerp is special (time-based smoothing)
             // 0.1 is the "smoothing factor" (0.0 = no movement, 1.0 = instant movement)
             // lower = smoother/slower acceleration
