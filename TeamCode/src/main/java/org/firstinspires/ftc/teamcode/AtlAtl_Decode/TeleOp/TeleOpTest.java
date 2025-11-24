@@ -26,7 +26,7 @@ public class TeleOpTest extends OpMode {
     private double prevHeading = 0;
 
     // shooter target (ticks/sec), switched by buttons
-    private double shooterTargetVel = 0.0;
+    // private double shooterTargetVel = 0.0;
 
     @Override
     public void init() {
@@ -110,8 +110,10 @@ public class TeleOpTest extends OpMode {
         telemetry.addData("Current Heading", "%.2f",
                 imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
         telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
+        /*
         telemetry.addData("Shooter Target Vel", shooterTargetVel);
         telemetry.addData("Shooter Actual Vel", shooter.getVelocity());
+        */
         telemetry.update();
     }
 
