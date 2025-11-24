@@ -77,8 +77,7 @@ public class TeleOpTest extends OpMode {
         rightBack.setPower(rightBackPower / max);
     }
 
-    private boolean intakeAlwaysOn = true;
-    private boolean intakeToggled = false;
+    private boolean intakeStopped = false;
     private boolean intakePrev = false;
     public void Intake() {
 
@@ -93,14 +92,11 @@ public class TeleOpTest extends OpMode {
         }*/
 
         if (gamepad1.left_bumper && !intakePrev) {
-            intakeToggled = !intakeToggled;
+            intakeStopped = !intakeStopped;
         }
         intakePrev = gamepad1.left_bumper;
 
-        double intakePower = 1.0;
-        if (!intakeAlwaysOn) {
-            intakePower = intakeToggled ? 1.0 : 0;
-        }
+        double intakePower = intakeStopped ? 0 : 1.0;
         intake.setPower(intakePower);
     }
 
