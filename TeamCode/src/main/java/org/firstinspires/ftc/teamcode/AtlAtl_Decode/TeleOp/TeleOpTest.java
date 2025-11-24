@@ -78,13 +78,14 @@ public class TeleOpTest extends OpMode {
         shooter.setPower(0);
 
         //pidf setup; resets and RUN_USING_ENCODER
+        /*
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
 
         // PIDF shooter setup: reset encoder + RUN_USING_ENCODER
         shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        /*
+
         // apply PIDF coefficients from ShooterConfig
         shooter.setVelocityPIDFCoefficients(
                 ShooterConfig.kP,
