@@ -216,11 +216,14 @@ public class TeleOpTest extends OpMode {
         //  Y -> mid range
         //  B -> close
         if (gamepad1.y) {
-            shooterTargetVel = ShooterConfig.MID_VEL;
+           // shooterTargetVel = ShooterConfig.MID_VEL;
+            shooter.setVelocity(4600);
         } else if (gamepad1.b) {
-            shooterTargetVel = ShooterConfig.CLOSE_VEL;
+           // shooterTargetVel = ShooterConfig.CLOSE_VEL;
+            shooter.setVelocity(3200);
         } else if (gamepad1.right_trigger > 0.1) {
-            shooterTargetVel = 900;
+           // shooterTargetVel = 900;
+            shooter.setVelocity(5750);
         }
         /*
         if (gamepad1.right_trigger > 0.1) {
