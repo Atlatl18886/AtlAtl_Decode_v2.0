@@ -59,12 +59,18 @@ public class TeleOpTest extends OpMode {
         // init everything else
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         intake.setDirection(DcMotorEx.Direction.FORWARD);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setPower(0);
 
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
         transfer.setDirection(DcMotorEx.Direction.REVERSE);
+        transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        transfer.setPower(0);
 
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setDirection(DcMotorEx.Direction.REVERSE);
+        shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooter.setPower(0);
 
     }
 
@@ -173,17 +179,25 @@ public class TeleOpTest extends OpMode {
 
     public void Transfer() {
         if (gamepad1.right_bumper) {
-            transfer.setPower(-0.3);
+            transfer.setPower(1);
         } else {
-            transfer.setPower(1.0);
+            transfer.setPower(0);
         }
     }
 
     public void Shooter() {
         if (gamepad1.right_trigger > 0.1) {
+            if (shooter.getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
+                shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            }
             shooter.setVelocity(1100);
         } else {
+            if (shooter.getMode() != DcMotor.RunMode.RUN_WITHOUT_ENCODER) {
+                shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            }
             shooter.setPower(0);
         }
     }
+
+
 }
