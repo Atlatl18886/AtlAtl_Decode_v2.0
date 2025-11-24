@@ -93,13 +93,13 @@ public class TeleOpTest extends OpMode {
         }*/
 
         if (gamepad1.left_bumper && !intakePrev) {
-            intakeToggle = !intakeToggle;
+            intakeToggled = !intakeToggled;
         }
         intakePrev = gamepad1.left_bumper;
 
         double intakePower = 1.0;
         if (!intakeAlwaysOn) {
-            intakePower = intakeToggle ? 1.0 : 0;
+            intakePower = intakeToggled ? 1.0 : 0;
         }
         intake.setPower(intakePower);
     }
