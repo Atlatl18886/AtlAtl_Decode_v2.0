@@ -46,7 +46,9 @@ public class TeleOpTest extends OpMode {
         // imu init
         imu = hardwareMap.get(IMU.class, "imu");
 
-        // important to change
+        // IMU orientation
+        // IMPORTANT TODO: fill in these values based on
+        //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
         RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
@@ -70,6 +72,20 @@ public class TeleOpTest extends OpMode {
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setDirection(DcMotorEx.Direction.REVERSE);
         shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooter.setPower(0);
+
+        //pidf setup; resets and RUN_USING_ENCODER
+        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        //apply pidf coefficients from ShooterConfig
+        shooter.setVelocityPIDFCoefficients(
+                ShooterConfig.kP,
+                ShooterConfig.kI,
+                ShooterConfig.kD,
+                ShooterConfig.kF
+        );
+
         shooter.setPower(0);
 
     }
@@ -187,14 +203,21 @@ public class TeleOpTest extends OpMode {
 
     public void Shooter() {
         if (gamepad1.right_trigger > 0.1) {
+
             if (shooter.getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
                 shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             }
-            shooter.setVelocity(1100);
+
+            // update for tweaking
+            shooter.setVelocityPIDFCoefficients(
+                    ShooterConfig.kP,
+                    ShooterConfig.kI,
+                    ShooterConfig.kD,
+                    ShooterConfig.kF
+            );
+
+            shooter.setVelocity(ShooterConfig.targetVel);
         } else {
-            if (shooter.getMode() != DcMotor.RunMode.RUN_WITHOUT_ENCODER) {
-                shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            }
             shooter.setPower(0);
         }
     }
