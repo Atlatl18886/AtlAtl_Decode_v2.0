@@ -11,4 +11,5 @@ public class TeleOpConfig {
     public static double AIM_TURN_SCALE = 0.15;  // turning slowdown when A is held
 
     public static double LERP_SPEED = 0.2; //0.1 for driftiness, greater values for responsiveness, 0.2 & 0.3 are avg lerps
+
 }

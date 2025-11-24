@@ -53,7 +53,7 @@ public class TeleOpTest extends OpMode {
         // IMPORTANT TODO: fill in these values based on
         //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
 
         imu.initialize(new IMU.Parameters(orientationOnRobot));
@@ -84,7 +84,7 @@ public class TeleOpTest extends OpMode {
         // PIDF shooter setup: reset encoder + RUN_USING_ENCODER
         shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
+        /*
         // apply PIDF coefficients from ShooterConfig
         shooter.setVelocityPIDFCoefficients(
                 ShooterConfig.kP,
@@ -92,7 +92,7 @@ public class TeleOpTest extends OpMode {
                 ShooterConfig.kD,
                 ShooterConfig.kF
         );
-
+        */
         shooter.setPower(0);
 
     }
@@ -218,8 +218,10 @@ public class TeleOpTest extends OpMode {
             shooterTargetVel = ShooterConfig.MID_VEL;
         } else if (gamepad1.b) {
             shooterTargetVel = ShooterConfig.CLOSE_VEL;
+        } else if (gamepad1.right_trigger > 0.1) {
+            shooterTargetVel = 900;
         }
-
+        /*
         if (gamepad1.right_trigger > 0.1) {
 
             if (shooter.getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
@@ -227,6 +229,7 @@ public class TeleOpTest extends OpMode {
             }
 
             // update for tweaking
+
             shooter.setVelocityPIDFCoefficients(
                     ShooterConfig.kP,
                     ShooterConfig.kI,
@@ -238,6 +241,7 @@ public class TeleOpTest extends OpMode {
         } else {
             shooter.setPower(0);
         }
+        */
     }
 
 
