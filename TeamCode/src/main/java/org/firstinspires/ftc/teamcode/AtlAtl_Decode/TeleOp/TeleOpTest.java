@@ -77,17 +77,31 @@ public class TeleOpTest extends OpMode {
         rightBack.setPower(rightBackPower / max);
     }
 
+    private boolean intakeAlwaysOn = true;
+    private boolean intakeToggled = false;
+    private boolean intakePrev = false;
     public void Intake() {
-        //if a, power in 0.9
-        //if y, power out 0.9
-        //if none clicked, 0
+
 
         //optionally you can have it default to intake always on by putting that in the else case
+
+        /* old intake logic
         if (gamepad1.y) {
             intake.setPower(-1.0);
         } else {
             intake.setPower(1.0);
+        }*/
+
+        if (gamepad1.left_bumper && !intakePrev) {
+            intakeToggle = !intakeToggle;
         }
+        intakePrev = gamepad1.left_bumper;
+
+        double intakePower = 1.0;
+        if (!intakeAlwaysOn) {
+            intakePower = intakeToggle ? 1.0 : 0;
+        }
+        intake.setPower(intakePower);
     }
 
     public void Transfer() {
@@ -105,7 +119,6 @@ public class TeleOpTest extends OpMode {
             shooter.setPower(0);
         }
     }
-
 
 
 }
