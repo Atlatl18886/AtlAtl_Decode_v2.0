@@ -1,5 +1,10 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 
+//imu imports
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -12,6 +17,8 @@ public class TeleOpTest extends OpMode {
     private DcMotorEx intake;
     private DcMotorEx transfer;
     private DcMotorEx shooter;
+
+    private IMU imu;
 
     @Override
     public void init() {
@@ -26,23 +33,31 @@ public class TeleOpTest extends OpMode {
         leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
         rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
 
-
-
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        //Initialize Intakes -----------------------------------------------------
-        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        // imu init
+        imu = hardwareMap.get(IMU.class, "imu");
 
+        // important to change
+        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
+        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
+
+        imu.initialize(new IMU.Parameters(orientationOnRobot));
+
+        imu.resetYaw();
+
+
+        // init everything else
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
         intake.setDirection(DcMotorEx.Direction.FORWARD);
 
-        //Initialize Transfer -----------------------------------------------------
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
         transfer.setDirection(DcMotorEx.Direction.REVERSE);
 
-        //Initialize Shooter -----------------------------------------------------
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setDirection(DcMotorEx.Direction.REVERSE);
 
@@ -54,12 +69,23 @@ public class TeleOpTest extends OpMode {
         Intake();
         Transfer();
         Shooter();
+
+        // telemetry for debug
+        telemetry.addData("Current Heading", "%.2f", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+        telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
     }
 
     public void Drive() {
+
+        // aim mod
+        double turnSpeedMultiplier = 1.0;
+        if (gamepad1.a) {
+            turnSpeedMultiplier = 0.25; //qaurtered turn speed for aim mode
+        }
+
         double strafe   = -gamepad1.left_stick_x;
         double vertical = gamepad1.left_stick_y;
-        double heading  =  -gamepad1.right_stick_x;
+        double heading  =  -gamepad1.right_stick_x * turnSpeedMultiplier;
 
         double leftFrontPower  = vertical + strafe + heading;
         double rightFrontPower = vertical + strafe - heading;
@@ -80,17 +106,6 @@ public class TeleOpTest extends OpMode {
     private boolean intakeStopped = false;
     private boolean intakePrev = false;
     public void Intake() {
-
-
-        //optionally you can have it default to intake always on by putting that in the else case
-
-        /* old intake logic
-        if (gamepad1.y) {
-            intake.setPower(-1.0);
-        } else {
-            intake.setPower(1.0);
-        }*/
-
         if (gamepad1.left_bumper && !intakePrev) {
             intakeStopped = !intakeStopped;
         }
@@ -115,6 +130,4 @@ public class TeleOpTest extends OpMode {
             shooter.setPower(0);
         }
     }
-
-
 }
