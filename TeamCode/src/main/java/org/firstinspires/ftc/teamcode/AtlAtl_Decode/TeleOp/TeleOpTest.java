@@ -224,6 +224,8 @@ public class TeleOpTest extends OpMode {
         } else if (gamepad1.right_trigger > 0.1) {
            // shooterTargetVel = 900;
             shooter.setVelocity(5750);
+        } else {
+            shooter.setPower(0);
         }
         /*
         if (gamepad1.right_trigger > 0.1) {
