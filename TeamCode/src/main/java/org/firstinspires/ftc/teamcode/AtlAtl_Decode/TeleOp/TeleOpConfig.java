@@ -6,7 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 public class TeleOpConfig {
 
     // DRIVE CONFIG
-    public static String DRIVE_PRESET = "LERP"; //"QUADRATIC", "LINEAR"(default, original), "EXPONENTIAL", "LERP" - smooth linear, CAN ADD DRIFT
+    public static String DRIVE_PRESET = "LINEAR"; //"QUADRATIC", "LINEAR"(default, original), "EXPONENTIAL", "LERP" - smooth linear, CAN ADD DRIFT
     public static double DRIVE_DEADZONE = 0.05; // the first 5% of joystick movement is ignored, prevents accidentals
     public static double AIM_TURN_SCALE = 0.15;  // turning slowdown when A is held
 

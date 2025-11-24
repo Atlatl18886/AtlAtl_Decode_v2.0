@@ -209,7 +209,7 @@ public class TeleOpTest extends OpMode {
         if (gamepad1.right_bumper) {
             transfer.setPower(1);
         } else {
-            transfer.setPower(0);
+            transfer.setPower(-1);
         }
     }
 
@@ -227,7 +227,7 @@ public class TeleOpTest extends OpMode {
            // shooterTargetVel = 900;
             shooter.setVelocity(5750);
         } else {
-            shooter.setPower(0);
+            shooter.setPower(1);
         }
         /*
         if (gamepad1.right_trigger > 0.1) {
