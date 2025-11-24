@@ -4,11 +4,12 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @TeleOp
 public class TeleOpTest extends OpMode {
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
-    private DcMotorEx intake, topIntake;
+    private DcMotorEx intake;
     private DcMotorEx transfer;
     private DcMotorEx shooter;
 
@@ -20,10 +21,12 @@ public class TeleOpTest extends OpMode {
         leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
         rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
 
-        leftFront.setDirection(DcMotorEx.Direction.FORWARD);
-        rightFront.setDirection(DcMotorEx.Direction.REVERSE);
-        leftBack.setDirection(DcMotorEx.Direction.FORWARD);
-        rightBack.setDirection(DcMotorEx.Direction.REVERSE);
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+
+
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -37,11 +40,11 @@ public class TeleOpTest extends OpMode {
 
         //Initialize Transfer -----------------------------------------------------
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
-        transfer.setDirection(DcMotorEx.Direction.FORWARD);
+        transfer.setDirection(DcMotorEx.Direction.REVERSE);
 
         //Initialize Shooter -----------------------------------------------------
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
-        shooter.setDirection(DcMotorEx.Direction.FORWARD);
+        shooter.setDirection(DcMotorEx.Direction.REVERSE);
 
     }
 
@@ -55,13 +58,13 @@ public class TeleOpTest extends OpMode {
 
     public void Drive() {
         double strafe   = -gamepad1.left_stick_x;
-        double vertical = -gamepad1.left_stick_y;
-        double heading  =  gamepad1.right_stick_x;
+        double vertical = gamepad1.left_stick_y;
+        double heading  =  -gamepad1.right_stick_x;
 
         double leftFrontPower  = vertical + strafe + heading;
-        double rightFrontPower = vertical - strafe - heading;
+        double rightFrontPower = vertical + strafe - heading;
         double leftBackPower   = vertical - strafe + heading;
-        double rightBackPower  = vertical + strafe - heading;
+        double rightBackPower  = vertical - strafe - heading;
 
         double max = Math.max(1.0, Math.max(
                 Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower)),
@@ -80,24 +83,23 @@ public class TeleOpTest extends OpMode {
         //if none clicked, 0
 
         //optionally you can have it default to intake always on by putting that in the else case
-        if (gamepad1.a) {
-            topIntake.setPower(0.9);
-            intake.setPower(0.9);
-        } else if (gamepad1.y) {
-            topIntake.setPower(-0.9);
-            intake.setPower(-0.9);
+        if (gamepad1.y) {
+            intake.setPower(-1.0);
         } else {
-            topIntake.setPower(0);
-            intake.setPower(0);
+            intake.setPower(1.0);
         }
     }
 
     public void Transfer() {
-        //TODO - Make code
+        if (gamepad1.x) {
+            transfer.setPower(-0.3);
+        } else {
+            transfer.setPower(1.0);
+        }
     }
 
     public void Shooter() {
-        //TODO - Make code
+        shooter.setVelocity(1100);
     }
 
 
