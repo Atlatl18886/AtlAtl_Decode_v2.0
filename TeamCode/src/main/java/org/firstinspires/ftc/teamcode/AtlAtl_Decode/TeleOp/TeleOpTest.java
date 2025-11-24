@@ -4,6 +4,8 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -18,7 +20,7 @@ public class TeleOpTest extends OpMode {
     private DcMotorEx transfer;
     private DcMotorEx shooter;
 
-    private IMU imu;
+    public IMU imu;
 
     // memory for LERP preset
     private double prevStrafe = 0;
@@ -26,7 +28,6 @@ public class TeleOpTest extends OpMode {
     private double prevHeading = 0;
 
     // shooter target (ticks/sec), switched by buttons
-    // private double shooterTargetVel = 0.0;
 
     @Override
     public void init() {
@@ -77,25 +78,6 @@ public class TeleOpTest extends OpMode {
         shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooter.setPower(0);
 
-        //pidf setup; resets and RUN_USING_ENCODER
-        /*
-        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
-        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        // PIDF shooter setup: reset encoder + RUN_USING_ENCODER
-        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        // apply PIDF coefficients from ShooterConfig
-        shooter.setVelocityPIDFCoefficients(
-                ShooterConfig.kP,
-                ShooterConfig.kI,
-                ShooterConfig.kD,
-                ShooterConfig.kF
-        );
-        */
-        shooter.setPower(0);
-
     }
 
     @Override
@@ -110,33 +92,46 @@ public class TeleOpTest extends OpMode {
         telemetry.addData("Current Heading", "%.2f",
                 imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
         telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
-        /*
-        telemetry.addData("Shooter Target Vel", shooterTargetVel);
-        telemetry.addData("Shooter Actual Vel", shooter.getVelocity());
-        */
         telemetry.update();
     }
 
+    // Create an object to receive the IMU angles
+    /*
+    YawPitchRollAngles robotOrientation;
+    robotOrientation = imu.getRobotYawPitchRollAngles();
+
+    // Now use these simple methods to extract each angle
+// (Java type double) from the object you just created:
+    double Yaw   = robotOrientation.getYaw(AngleUnit.DEGREES);
+    double Pitch = robotOrientation.getPitch(AngleUnit.DEGREES);
+    double Roll  = robotOrientation.getRoll(AngleUnit.DEGREES);
+    */
     public void Drive(String PRESET, double deadzone) {
         double rStrafe = -gamepad1.left_stick_x;
-        double rVertical =  gamepad1.left_stick_y;
+        double rVertical =  -gamepad1.left_stick_y;
         double rHeading = -gamepad1.right_stick_x;
 
         double strafe, vertical, heading;
+
+        // apply deadzone first
+        if (Math.abs(rStrafe)   < deadzone) rStrafe = 0;
+        if (Math.abs(rVertical) < deadzone) rVertical = 0;
+        if (Math.abs(rHeading)  < deadzone) rHeading = 0;
 
         if (PRESET.equals("LERP")) {
 
             // lerp is special (time-based smoothing)
             double lerpSpeed = TeleOpConfig.LERP_SPEED;
 
-            // apply deadzone first
-            if (Math.abs(rStrafe)   < deadzone) rStrafe = 0;
-            if (Math.abs(rVertical) < deadzone) rVertical = 0;
-            if (Math.abs(rHeading)  < deadzone) rHeading = 0;
 
             strafe   = lerp(prevStrafe, rStrafe,   lerpSpeed);
             vertical = lerp(prevVertical, rVertical, lerpSpeed);
             heading  = lerp(prevHeading, rHeading,  lerpSpeed);
+
+            // clamp small lerp outputs ?
+            if (Math.abs(strafe) < deadzone)   strafe = 0;
+            if (Math.abs(vertical) < deadzone) vertical = 0;
+            if (Math.abs(heading) < deadzone)  heading = 0;
 
             // save for next loop
             prevStrafe   = strafe;
@@ -171,6 +166,12 @@ public class TeleOpTest extends OpMode {
         rightFront.setPower(rightFrontPower / max);
         leftBack.setPower(leftBackPower    / max);
         rightBack.setPower(rightBackPower  / max);
+     /*   if (orientation < 10) {
+            leftFront.setPower(1);
+            leftBack.setPower(1);
+            rightBack.setPower(-1);
+            rightFront.setPower(-1);
+        }*/
     }
 
     // helper for curves
@@ -193,6 +194,9 @@ public class TeleOpTest extends OpMode {
 
 
     //non dt functionalities
+
+    //intake speed factor when trasfer is running -- FOR TESTING
+    public int speedFactor = 1;
     private boolean intakeStopped = false;
     private boolean intakePrev = false;
     public void Intake() {
@@ -202,14 +206,16 @@ public class TeleOpTest extends OpMode {
         intakePrev = gamepad1.left_bumper;
 
         double intakePower = intakeStopped ? 0 : 1.0;
-        intake.setPower(intakePower);
+        intake.setPower(intakePower/speedFactor);
     }
 
     public void Transfer() {
-        if (gamepad1.right_bumper) {
+        if (gamepad1.right_trigger > 0.2) {
             transfer.setPower(1);
+            speedFactor = 1;
         } else {
             transfer.setPower(-1);
+            speedFactor = 1;
         }
     }
 
@@ -223,33 +229,13 @@ public class TeleOpTest extends OpMode {
         } else if (gamepad1.b) {
            // shooterTargetVel = ShooterConfig.CLOSE_VEL;
             shooter.setVelocity(3200);
-        } else if (gamepad1.right_trigger > 0.1) {
+        } else if (gamepad1.left_trigger > 0.1) {
            // shooterTargetVel = 900;
             shooter.setVelocity(5750);
         } else {
-            shooter.setPower(1);
+            shooter.setPower(0.7);
         }
-        /*
-        if (gamepad1.right_trigger > 0.1) {
 
-            if (shooter.getMode() != DcMotor.RunMode.RUN_USING_ENCODER) {
-                shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            }
-
-            // update for tweaking
-
-            shooter.setVelocityPIDFCoefficients(
-                    ShooterConfig.kP,
-                    ShooterConfig.kI,
-                    ShooterConfig.kD,
-                    ShooterConfig.kF
-            );
-
-            shooter.setVelocity(shooterTargetVel);
-        } else {
-            shooter.setPower(0);
-        }
-        */
     }
 
 
