@@ -20,6 +20,11 @@ public class TeleOpTest extends OpMode {
 
     private IMU imu;
 
+    // memory for LERP preset
+    private double prevStrafe = 0;
+    private double prevVertical = 0;
+    private double prevHeading = 0;
+
     @Override
     public void init() {
         //Initialize Drivetrain -----------------------------------------------------
@@ -65,7 +70,9 @@ public class TeleOpTest extends OpMode {
 
     @Override
     public void loop() {
-        Drive();
+        // @param {String} PRESET - "QUADRATIC", "LINEAR" - default, old, "EXPONENTIAL", "LERP" - smooth linear
+        // @param {int} DEADZONE - 0.05 would mean the first 5% of joystick movement is ignored, prevents accidentals
+        Drive("QUADRATIC", 0.05);
         Intake();
         Transfer();
         Shooter();
@@ -75,23 +82,52 @@ public class TeleOpTest extends OpMode {
         telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
     }
 
-    public void Drive() {
+    public void Drive(String PRESET, double deadzone) {
+        double rawStrafe   = -gamepad1.left_stick_x;
+        double rawVertical = gamepad1.left_stick_y;
+        double rawHeading  = -gamepad1.right_stick_x;
 
-        // aim mod
-        double turnSpeedMultiplier = 1.0;
-        if (gamepad1.a) {
-            turnSpeedMultiplier = 0.25; //qaurtered turn speed for aim mode
+        double strafe, vertical, heading;
+
+        if (PRESET.equals("LERP")) {
+            // lerp is special (time-based smoothing)
+            // 0.1 is the "smoothing factor" (0.0 = no movement, 1.0 = instant movement)
+            // lower = smoother/slower acceleration
+            double lerpSpeed = 0.2;
+
+            //apply deadzone first
+            if(Math.abs(rawStrafe) < deadzone) rawStrafe = 0;
+            if(Math.abs(rawVertical) < deadzone) rawVertical = 0;
+            if(Math.abs(rawHeading) < deadzone) rawHeading = 0;
+
+            strafe   = lerp(prevStrafe, rawStrafe, lerpSpeed);
+            vertical = lerp(prevVertical, rawVertical, lerpSpeed);
+            heading  = lerp(prevHeading, rawHeading, lerpSpeed);
+
+            //save for next loop
+            prevStrafe = strafe;
+            prevVertical = vertical;
+            prevHeading = heading;
+
+        } else {
+            // standard Curves (LINEAR/QUAD/EXPONENTIAL)
+            strafe   = processInput(rawStrafe, PRESET, deadzone);
+            vertical = processInput(rawVertical, PRESET, deadzone);
+            heading  = processInput(rawHeading, PRESET, deadzone);
         }
 
-        double strafe   = -gamepad1.left_stick_x;
-        double vertical = gamepad1.left_stick_y;
-        double heading  =  -gamepad1.right_stick_x * turnSpeedMultiplier;
+        // aim mode
+        if (gamepad1.a) {
+            heading *= 0.15; //slow turning
+        }
 
+        //standard mec math
         double leftFrontPower  = vertical + strafe + heading;
         double rightFrontPower = vertical + strafe - heading;
         double leftBackPower   = vertical - strafe + heading;
         double rightBackPower  = vertical - strafe - heading;
 
+        //noramlize
         double max = Math.max(1.0, Math.max(
                 Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower)),
                 Math.max(Math.abs(leftBackPower), Math.abs(rightBackPower))
@@ -103,6 +139,24 @@ public class TeleOpTest extends OpMode {
         rightBack.setPower(rightBackPower / max);
     }
 
+    //helper for curves
+    private double processInput(double input, String preset, double deadzone) {
+        if (Math.abs(input) < deadzone) return 0.0;
+        switch (preset) {
+            case "QUADRATIC": return input * Math.abs(input);
+            case "EXPONENTIAL": return Math.pow(input, 3);
+            default: return input;
+        }
+    }
+
+    //lerp is special
+    //formula: Current + (Target - Current) * Speed
+    private double lerp(double current, double target, double speed) {
+        return current + (target - current) * speed;
+    }
+
+
+    //non dt functionalities
     private boolean intakeStopped = false;
     private boolean intakePrev = false;
     public void Intake() {
