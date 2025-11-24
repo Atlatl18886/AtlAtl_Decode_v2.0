@@ -91,7 +91,7 @@ public class TeleOpTest extends OpMode {
     }
 
     public void Transfer() {
-        if (gamepad1.x) {
+        if (gamepad1.right_bumper) {
             transfer.setPower(-0.3);
         } else {
             transfer.setPower(1.0);
@@ -99,7 +99,11 @@ public class TeleOpTest extends OpMode {
     }
 
     public void Shooter() {
-        shooter.setVelocity(1100);
+        if (gamepad1.right_trigger > 0.1) {
+            shooter.setVelocity(1100);
+        } else {
+            shooter.setPower(0);
+        }
     }
 
 
