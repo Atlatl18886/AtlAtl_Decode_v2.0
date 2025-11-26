@@ -14,6 +14,8 @@ public class TeleOpConfig {
 
     public static double LERP_SPEED = 0.38; //0.1 for driftiness, greater values are more like linear mode, 0.2 & 0.3 are avg - DOESNT MATTER IF PRESET ISNT ON LERP
 
+    public static double imu_kP = 0.04; //tuned for jayans house; RETUNE AFTER BREAK
+    public static double imu_turn_factor = 2;
     // SHOOTER CONFIG
     public static class shooter {
         //button speed presets
@@ -22,6 +24,6 @@ public class TeleOpConfig {
         public static double FAR_RPM = 5600;
         public static double DEFAULT_RPM = 0; //1900
         public static double tolerance = 5000; // +/- rpm wiggle room for transfer cycle to initiate
-        public static double feedtime = 400; //ms time for one ball through trnasfer
+        public static double feedtime = 1; //ms time for one ball through trnasfer
     }
 }

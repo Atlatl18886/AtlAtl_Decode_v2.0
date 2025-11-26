@@ -96,10 +96,38 @@ public class TeleOpTest extends OpMode {
         Shooter();
         Transfer();
 
+        // imu thingy, test
+
+        double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        if (gamepad1.x) {
+            double targetHeading = 90.0; //change to whatever goal is gonna be
+            double error = targetHeading - currentHeading;
+            // +- 5 thresh
+            if (Math.abs(error) > 5.0) {
+                double kP = TeleOpConfig.imu_kP;
+                double turnPower = error * kP;
+                if (turnPower > 0.5) turnPower = 0.5;
+                if (turnPower < -0.5) turnPower = -0.5;
+
+                double factor = TeleOpConfig.imu_turn_factor;
+                turnPower *= factor;
+
+                leftFront.setPower(turnPower);
+                leftBack.setPower(turnPower);
+                rightFront.setPower(-turnPower);
+                rightBack.setPower(-turnPower);
+            } else {
+                leftFront.setPower(0);
+                leftBack.setPower(0);
+                rightFront.setPower(0);
+                rightBack.setPower(0);
+            }
+        }
+
         // telemetry for debug with imu
         telemetry.addData("Current Heading", "%.2f",
                 imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-        telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
+        telemetry.addData("Aim Mode Active (right bumper)", gamepad1.right_bumper);
 
         double currentVel = Math.abs(shooter.getVelocity());
         telemetry.addData("--- Shooter ---", "");
@@ -111,23 +139,6 @@ public class TeleOpTest extends OpMode {
         telemetry.addData("Shooter Ready?", shooterReady);
         telemetry.update();
     }
-
-
-    // IMU CODE FROM DOCS
-    // Create an object to receive the IMU angles
-    /*
-    YawPitchRollAngles robotOrientation;
-    robotOrientation = imu.getRobotYawPitchRollAngles();
-
-    // Now use these simple methods to extract each angle
-// (Java type double) from the object you just created:
-    double Yaw   = robotOrientation.getYaw(AngleUnit.DEGREES);
-    double Pitch = robotOrientation.getPitch(AngleUnit.DEGREES);
-    double Roll  = robotOrientation.getRoll(AngleUnit.DEGREES);
-
-    logic to implemeent: when left arrow pressed, if pitch doesnt equal that of the red/blue goal, rotate robot until it is
-    */
-
 
     public void Drive(String PRESET, double deadzone) {
         double rStrafe = -gamepad1.left_stick_x;
@@ -151,7 +162,7 @@ public class TeleOpTest extends OpMode {
             vertical = lerp(prevVertical, rVertical, lerpSpeed);
             heading = lerp(prevHeading, rHeading, lerpSpeed);
 
-            // clamp small lerp outputs ?
+            // clamp small lerp outputs?
             if (Math.abs(strafe) < deadzone) strafe = 0;
             if (Math.abs(vertical) < deadzone) vertical = 0;
             if (Math.abs(heading) < deadzone) heading = 0;
@@ -169,7 +180,7 @@ public class TeleOpTest extends OpMode {
         }
 
         //aim mode from config
-        if (gamepad1.a) {
+        if (gamepad1.right_bumper) {
             heading *= TeleOpConfig.AIM_TURN_SCALE; //slow turning
         }
 
@@ -215,8 +226,6 @@ public class TeleOpTest extends OpMode {
                 return input;
         }
     }
-
-    //lerp is special
     private double lerp(double current, double target, double speed) {
         return current + (target - current) * speed;
     }
@@ -245,7 +254,7 @@ public class TeleOpTest extends OpMode {
 
         if (cycleActive) {
             if (transferTimer.milliseconds() < TeleOpConfig.shooter.feedtime) {
-                transfer.setPower(1.0);
+                transfer.setPower(0.67);
             } else {
                 transfer.setPower(0);
                 if (shooterReady) {
@@ -258,9 +267,9 @@ public class TeleOpTest extends OpMode {
             if (shooterReady) {
                 cycleActive = true;
                 transferTimer.reset();
-                transfer.setPower(1.0);
+                transfer.setPower(0.67);
             } else {
-                transfer.setPower(0);
+                transfer.setPower(0.67);
             }
         } else {
             transfer.setPower(-0.8);
@@ -270,13 +279,13 @@ public class TeleOpTest extends OpMode {
     public void Shooter() {
 
         if (gamepad1.left_trigger > 0.1) {
-            targetVel = FAR;
+            targetVel = CLOSE;
 
         } else if (gamepad1.b) {
             targetVel = MID;
 
         } else if (gamepad1.y) {
-            targetVel = CLOSE;
+            targetVel = FAR;
 
         } else {
             targetVel = DEFAULT;
