@@ -6,7 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 public class TeleOpConfig {
 
     // DRIVE CONFIG
-    public static String DRIVE_PRESET = "LERP"; //"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT)
+    public static String DRIVE_PRESET = "LINEAR"; //"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT)
 
     public static double speedFactor = 0.8; //AKA SENS, range 0 to 1, percentage speed(1 means 435 rpm) IDK IF IT WORKS FOR LERP
     public static double DRIVE_DEADZONE = 0.05; // the first 5% of joystick movement is ignored, prevents accidentals
@@ -17,11 +17,11 @@ public class TeleOpConfig {
     // SHOOTER CONFIG
     public static class shooter {
         //button speed presets
-        public static double MID = 4000;
-        public static double CLOSE = 2800;
-        public static double FAR = 6000;
-        public static double DEFAULT = 0; //1900
-        public static double tolerance = 4000; // +/- rpm wiggle room for transfer cycle to initiate
+        public static double MID_RPM = 4000;
+        public static double CLOSE_RPM = 2800;
+        public static double FAR_RPM = 5600;
+        public static double DEFAULT_RPM = 0; //1900
+        public static double tolerance = 5000; // +/- rpm wiggle room for transfer cycle to initiate
         public static double feedtime = 400; //ms time for one ball through trnasfer
     }
 }

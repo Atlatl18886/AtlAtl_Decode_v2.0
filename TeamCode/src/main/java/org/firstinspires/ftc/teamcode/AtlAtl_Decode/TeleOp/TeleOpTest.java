@@ -28,6 +28,11 @@ public class TeleOpTest extends OpMode {
 
     // shooter target (ticks/sec), switched by buttons
     private double targetVel = 0;
+    private double TICKS_PER_REVOLUTION = shooter.getMotorType().getTicksPerRev();
+    private double CLOSE = (TeleOpConfig.shooter.CLOSE_RPM / 60.0) * TICKS_PER_REVOLUTION;
+    private double MID = (TeleOpConfig.shooter.MID_RPM / 60.0) * TICKS_PER_REVOLUTION;
+    private double FAR = (TeleOpConfig.shooter.FAR_RPM / 60.0) * TICKS_PER_REVOLUTION;
+    private double DEFAULT = (TeleOpConfig.shooter.DEFAULT_RPM / 60.0) * TICKS_PER_REVOLUTION;
     private boolean cycleActive = false;
     private final ElapsedTime transferTimer = new ElapsedTime();
 
@@ -94,13 +99,14 @@ public class TeleOpTest extends OpMode {
         telemetry.addData("Current Heading", "%.2f",
                 imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
         telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
-        telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
+
+        double currentVel = Math.abs(shooter.getVelocity());
         telemetry.addData("--- Shooter ---", "");
         telemetry.addData("Target Vel", "%.1f", targetVel);
-        telemetry.addData("Current Vel", "%.1f", Math.abs(shooter.getVelocity()));
+        telemetry.addData("Current Vel", "%.1f", currentVel);
         telemetry.addData("Cycle Active?", cycleActive);
         telemetry.addData("Feed Timer", "%.0f", transferTimer.milliseconds());
-        boolean shooterReady = shooter.getVelocity() >= targetVel - TeleOpConfig.shooter.tolerance && targetVel > 0; //if robot thinks that shooter is ready
+        boolean shooterReady = Math.abs(currentVel - targetVel) < TeleOpConfig.shooter.tolerance && targetVel > 0;
         telemetry.addData("Shooter Ready?", shooterReady);
         telemetry.update();
     }
@@ -240,7 +246,6 @@ public class TeleOpTest extends OpMode {
             if (transferTimer.milliseconds() < TeleOpConfig.shooter.feedtime) {
                 transfer.setPower(1.0);
             } else {
-                //recharge
                 transfer.setPower(0);
                 if (shooterReady) {
                     //end cycle
@@ -264,16 +269,16 @@ public class TeleOpTest extends OpMode {
     public void Shooter() {
 
         if (gamepad1.left_trigger > 0.1) {
-            targetVel = TeleOpConfig.shooter.FAR;
+            targetVel = FAR;
 
         } else if (gamepad1.b) {
-            targetVel = TeleOpConfig.shooter.MID;
+            targetVel = MID;
 
         } else if (gamepad1.y) {
-            targetVel = TeleOpConfig.shooter.CLOSE;
+            targetVel = CLOSE;
 
         } else {
-            targetVel = TeleOpConfig.shooter.DEFAULT;
+            targetVel = DEFAULT;
         }
         if (targetVel > 0) {
             shooter.setVelocity(targetVel);
