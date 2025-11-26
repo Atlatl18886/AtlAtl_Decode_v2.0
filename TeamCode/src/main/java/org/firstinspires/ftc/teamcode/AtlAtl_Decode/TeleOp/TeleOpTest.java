@@ -4,14 +4,13 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp
 public class TeleOpTest extends OpMode {
@@ -28,6 +27,9 @@ public class TeleOpTest extends OpMode {
     private double prevHeading = 0;
 
     // shooter target (ticks/sec), switched by buttons
+    private double targetVel = 0;
+    private boolean cycleActive = false;
+    private final ElapsedTime transferTimer = new ElapsedTime();
 
     @Override
     public void init() {
@@ -54,7 +56,7 @@ public class TeleOpTest extends OpMode {
         // IMPORTANT TODO: fill in these values based on
         //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
+        RevHubOrientationOnRobot.UsbFacingDirection usbDirection = RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
 
         imu.initialize(new IMU.Parameters(orientationOnRobot));
@@ -75,7 +77,7 @@ public class TeleOpTest extends OpMode {
 
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setDirection(DcMotorEx.Direction.REVERSE);
-        shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter.setPower(0);
 
     }
@@ -85,16 +87,26 @@ public class TeleOpTest extends OpMode {
         //from config
         Drive(TeleOpConfig.DRIVE_PRESET, TeleOpConfig.DRIVE_DEADZONE);
         Intake();
-        Transfer();
         Shooter();
+        Transfer();
 
-        // telemetry for debug with imu + shooter
+        // telemetry for debug with imu
         telemetry.addData("Current Heading", "%.2f",
                 imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
         telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
+        telemetry.addData("Aim Mode Active (A Button)", gamepad1.a);
+        telemetry.addData("--- Shooter ---", "");
+        telemetry.addData("Target Vel", "%.1f", targetVel);
+        telemetry.addData("Current Vel", "%.1f", Math.abs(shooter.getVelocity()));
+        telemetry.addData("Cycle Active?", cycleActive);
+        telemetry.addData("Feed Timer", "%.0f", transferTimer.milliseconds());
+        boolean shooterReady = shooter.getVelocity() >= targetVel - TeleOpConfig.shooter.tolerance && targetVel > 0; //if robot thinks that shooter is ready
+        telemetry.addData("Shooter Ready?", shooterReady);
         telemetry.update();
     }
 
+
+    // IMU CODE FROM DOCS
     // Create an object to receive the IMU angles
     /*
     YawPitchRollAngles robotOrientation;
@@ -105,18 +117,22 @@ public class TeleOpTest extends OpMode {
     double Yaw   = robotOrientation.getYaw(AngleUnit.DEGREES);
     double Pitch = robotOrientation.getPitch(AngleUnit.DEGREES);
     double Roll  = robotOrientation.getRoll(AngleUnit.DEGREES);
+
+    logic to implemeent: when left arrow pressed, if pitch doesnt equal that of the red/blue goal, rotate robot until it is
     */
+
+
     public void Drive(String PRESET, double deadzone) {
         double rStrafe = -gamepad1.left_stick_x;
-        double rVertical =  -gamepad1.left_stick_y;
+        double rVertical = gamepad1.left_stick_y;
         double rHeading = -gamepad1.right_stick_x;
 
         double strafe, vertical, heading;
 
         // apply deadzone first
-        if (Math.abs(rStrafe)   < deadzone) rStrafe = 0;
+        if (Math.abs(rStrafe) < deadzone) rStrafe = 0;
         if (Math.abs(rVertical) < deadzone) rVertical = 0;
-        if (Math.abs(rHeading)  < deadzone) rHeading = 0;
+        if (Math.abs(rHeading) < deadzone) rHeading = 0;
 
         if (PRESET.equals("LERP")) {
 
@@ -124,25 +140,25 @@ public class TeleOpTest extends OpMode {
             double lerpSpeed = TeleOpConfig.LERP_SPEED;
 
 
-            strafe   = lerp(prevStrafe, rStrafe,   lerpSpeed);
+            strafe = lerp(prevStrafe, rStrafe, lerpSpeed);
             vertical = lerp(prevVertical, rVertical, lerpSpeed);
-            heading  = lerp(prevHeading, rHeading,  lerpSpeed);
+            heading = lerp(prevHeading, rHeading, lerpSpeed);
 
             // clamp small lerp outputs ?
-            if (Math.abs(strafe) < deadzone)   strafe = 0;
+            if (Math.abs(strafe) < deadzone) strafe = 0;
             if (Math.abs(vertical) < deadzone) vertical = 0;
-            if (Math.abs(heading) < deadzone)  heading = 0;
+            if (Math.abs(heading) < deadzone) heading = 0;
 
             // save for next loop
-            prevStrafe   = strafe;
+            prevStrafe = strafe;
             prevVertical = vertical;
-            prevHeading  = heading;
+            prevHeading = heading;
 
         } else {
             // standard Curves (LINEAR/QUAD/EXPONENTIAL)
-            strafe   = processInput(rStrafe,   PRESET, deadzone);
+            strafe = processInput(rStrafe, PRESET, deadzone);
             vertical = processInput(rVertical, PRESET, deadzone);
-            heading  = processInput(rHeading,  PRESET, deadzone);
+            heading = processInput(rHeading, PRESET, deadzone);
         }
 
         //aim mode from config
@@ -150,22 +166,28 @@ public class TeleOpTest extends OpMode {
             heading *= TeleOpConfig.AIM_TURN_SCALE; //slow turning
         }
 
+        // apply speedFactor
+        vertical *= TeleOpConfig.speedFactor;
+        heading *= TeleOpConfig.speedFactor;
+        strafe *= TeleOpConfig.speedFactor;
+
+
         //standard mec math
-        double leftFrontPower  = vertical + strafe + heading;
+        double leftFrontPower = vertical + strafe + heading;
         double rightFrontPower = vertical + strafe - heading;
-        double leftBackPower   = vertical - strafe + heading;
-        double rightBackPower  = vertical - strafe - heading;
+        double leftBackPower = vertical - strafe + heading;
+        double rightBackPower = vertical - strafe - heading;
 
         //noramlize
         double max = Math.max(1.0, Math.max(
-                Math.max(Math.abs(leftFrontPower),  Math.abs(rightFrontPower)),
-                Math.max(Math.abs(leftBackPower),   Math.abs(rightBackPower))
+                Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower)),
+                Math.max(Math.abs(leftBackPower), Math.abs(rightBackPower))
         ));
 
-        leftFront.setPower(leftFrontPower  / max);
+        leftFront.setPower(leftFrontPower / max);
         rightFront.setPower(rightFrontPower / max);
-        leftBack.setPower(leftBackPower    / max);
-        rightBack.setPower(rightBackPower  / max);
+        leftBack.setPower(leftBackPower / max);
+        rightBack.setPower(rightBackPower / max);
      /*   if (orientation < 10) {
             leftFront.setPower(1);
             leftBack.setPower(1);
@@ -195,10 +217,9 @@ public class TeleOpTest extends OpMode {
 
     //non dt functionalities
 
-    //intake speed factor when trasfer is running -- FOR TESTING
-    public int speedFactor = 1;
     private boolean intakeStopped = false;
     private boolean intakePrev = false;
+
     public void Intake() {
         if (gamepad1.left_bumper && !intakePrev) {
             intakeStopped = !intakeStopped;
@@ -206,37 +227,58 @@ public class TeleOpTest extends OpMode {
         intakePrev = gamepad1.left_bumper;
 
         double intakePower = intakeStopped ? 0 : 1.0;
-        intake.setPower(intakePower/speedFactor);
+        intake.setPower(intakePower);
     }
 
     public void Transfer() {
-        if (gamepad1.right_trigger > 0.2) {
-            transfer.setPower(1);
-            speedFactor = 1;
+        boolean btnPressed = gamepad1.right_trigger > 0.2;
+
+        double currentVel = Math.abs(shooter.getVelocity());
+        boolean shooterReady = Math.abs(currentVel - targetVel) < TeleOpConfig.shooter.tolerance && targetVel > 0;
+
+        if (cycleActive) {
+            if (transferTimer.milliseconds() < TeleOpConfig.shooter.feedtime) {
+                transfer.setPower(1.0);
+            } else {
+                //recharge
+                transfer.setPower(0);
+                if (shooterReady) {
+                    //end cycle
+                    cycleActive = false;
+                }
+            }
+        } else if (btnPressed) {
+            //not in a cycle, driver wants to shoot, flywheel is ready
+            if (shooterReady) {
+                cycleActive = true;
+                transferTimer.reset();
+                transfer.setPower(1.0);
+            } else {
+                transfer.setPower(0);
+            }
         } else {
-            transfer.setPower(-1);
-            speedFactor = 1;
+            transfer.setPower(-0.8);
         }
     }
 
     public void Shooter() {
-        // buttons for presets:
-        //  Y -> mid range
-        //  B -> close
-        if (gamepad1.y) {
-           // shooterTargetVel = ShooterConfig.MID_VEL;
-            shooter.setVelocity(4600);
+
+        if (gamepad1.left_trigger > 0.1) {
+            targetVel = TeleOpConfig.shooter.FAR;
+
         } else if (gamepad1.b) {
-           // shooterTargetVel = ShooterConfig.CLOSE_VEL;
-            shooter.setVelocity(3200);
-        } else if (gamepad1.left_trigger > 0.1) {
-           // shooterTargetVel = 900;
-            shooter.setVelocity(5750);
+            targetVel = TeleOpConfig.shooter.MID;
+
+        } else if (gamepad1.y) {
+            targetVel = TeleOpConfig.shooter.CLOSE;
+
         } else {
-            shooter.setPower(0.7);
+            targetVel = TeleOpConfig.shooter.DEFAULT;
         }
-
+        if (targetVel > 0) {
+            shooter.setVelocity(targetVel);
+        } else {
+            shooter.setPower(0);
+        }
     }
-
-
 }
