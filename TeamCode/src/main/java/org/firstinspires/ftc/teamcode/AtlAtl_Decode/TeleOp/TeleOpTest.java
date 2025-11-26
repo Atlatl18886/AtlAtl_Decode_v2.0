@@ -28,11 +28,12 @@ public class TeleOpTest extends OpMode {
 
     // shooter target (ticks/sec), switched by buttons
     private double targetVel = 0;
-    private double TICKS_PER_REVOLUTION = shooter.getMotorType().getTicksPerRev();
-    private double CLOSE = (TeleOpConfig.shooter.CLOSE_RPM / 60.0) * TICKS_PER_REVOLUTION;
-    private double MID = (TeleOpConfig.shooter.MID_RPM / 60.0) * TICKS_PER_REVOLUTION;
-    private double FAR = (TeleOpConfig.shooter.FAR_RPM / 60.0) * TICKS_PER_REVOLUTION;
-    private double DEFAULT = (TeleOpConfig.shooter.DEFAULT_RPM / 60.0) * TICKS_PER_REVOLUTION;
+    //private double TICKS_PER_REVOLUTION = shooter.getMotorType().getTicksPerRev();
+    private final double TICKS_PER_REVOLUTION = 560;
+    private final double CLOSE = (TeleOpConfig.shooter.CLOSE_RPM / 60.0) * TICKS_PER_REVOLUTION;
+    private final double MID = (TeleOpConfig.shooter.MID_RPM / 60.0) * TICKS_PER_REVOLUTION;
+    private final double FAR = (TeleOpConfig.shooter.FAR_RPM / 60.0) * TICKS_PER_REVOLUTION;
+    private final double DEFAULT = (TeleOpConfig.shooter.DEFAULT_RPM / 60.0) * TICKS_PER_REVOLUTION;
     private boolean cycleActive = false;
     private final ElapsedTime transferTimer = new ElapsedTime();
 
