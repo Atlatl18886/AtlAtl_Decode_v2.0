@@ -1,15 +1,20 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
-public class SampleEncoderAutonomous extends LinearOpMode {
+public class BasicAuton extends LinearOpMode {
     //Declare Motors
     //private double tick = 45.2763689698;
     private DcMotorEx leftFront;
     private DcMotorEx rightFront;
     private DcMotorEx leftBack;
     private DcMotorEx rightBack;
+    private DcMotorEx intake;
+    private DcMotorEx transfer;
+    private DcMotorEx shooter;
 
     @Override
     public void runOpMode() {
@@ -52,13 +57,31 @@ public class SampleEncoderAutonomous extends LinearOpMode {
         leftBack.setDirection(DcMotorEx.Direction.FORWARD);
         rightBack.setDirection(DcMotorEx.Direction.REVERSE);
 
+        // init everything else
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        intake.setDirection(DcMotorEx.Direction.FORWARD);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setPower(0);
+
+        transfer = hardwareMap.get(DcMotorEx.class, "transfer");
+        transfer.setDirection(DcMotorEx.Direction.REVERSE);
+        transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        transfer.setPower(0);
+
+        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        shooter.setDirection(DcMotorEx.Direction.REVERSE);
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooter.setPower(0);
+
         //--------------------- RUN ---------------------\\
         //waits for the Driver Hub to receive "start" input
 
         waitForStart();
 
         //TODO: Pathing, use the functions below to move the robot
-
+        transfer.setPower(-0.8);
+        intake(1, 4);
+        vertical(10, 0.5, 2);
     }
 
     //Positive value will go forward, Negative value will go backward
@@ -130,6 +153,22 @@ public class SampleEncoderAutonomous extends LinearOpMode {
         rightFront.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         leftBack.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
         rightBack.setMode(DcMotorEx.RunMode.RUN_TO_POSITION);
+    }
+
+    private ElapsedTime intakeTimer = new ElapsedTime();
+    private boolean intakeActive = false;
+
+    public void intake(double power, double seconds) {
+        if (!intakeActive) {
+            intake.setPower(power);
+            intakeTimer.reset();
+            intakeActive = true;
+        }
+
+        if (intakeActive && intakeTimer.seconds() >= seconds) {
+            intake.setPower(0);
+            intakeActive = false;
+        }
     }
 
 }
