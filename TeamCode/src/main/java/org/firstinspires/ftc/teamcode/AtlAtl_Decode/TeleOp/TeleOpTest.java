@@ -36,6 +36,7 @@ public class TeleOpTest extends OpMode {
     private final double DEFAULT = (TeleOpConfig.shooter.DEFAULT_RPM / 60.0) * TICKS_PER_REVOLUTION;
     private boolean cycleActive = false;
     private final ElapsedTime transferTimer = new ElapsedTime();
+    private final ElapsedTime loopTimer = new ElapsedTime();
 
     @Override
     public void init() {
@@ -68,7 +69,7 @@ public class TeleOpTest extends OpMode {
         imu.initialize(new IMU.Parameters(orientationOnRobot));
 
         imu.resetYaw();
-
+        loopTimer.reset();
 
         // init everything else
         intake = hardwareMap.get(DcMotorEx.class, "intake");
@@ -227,7 +228,12 @@ public class TeleOpTest extends OpMode {
         }
     }
     private double lerp(double current, double target, double speed) {
-        return current + (target - current) * speed;
+        double dt = loopTimer.seconds();
+        loopTimer.reset();
+        double alpha = speed * dt; //scale by time
+
+        if (alpha > 1.0) alpha = 1.0;
+        return current + (target - current) * alpha;
     }
 
 
