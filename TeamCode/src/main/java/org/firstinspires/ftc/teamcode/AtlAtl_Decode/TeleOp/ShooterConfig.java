@@ -26,4 +26,6 @@ public class ShooterConfig {
 
      Max RPM: 6000
      Max TPS: 2800
+     OR
+     Multiply RPM by (7/15)
  */
