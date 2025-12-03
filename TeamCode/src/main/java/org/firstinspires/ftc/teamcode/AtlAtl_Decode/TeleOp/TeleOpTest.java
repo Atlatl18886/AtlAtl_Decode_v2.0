@@ -10,6 +10,21 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+/*
+Controls:
+Left Joystick - forward, backward, and strafe
+Right Joystick - turning
+Dpad Up - Save current heading
+Y - Shooter Close
+X - turn to saved heading
+B - Shooter Far
+A - Reverse intake (outtake)
+Left Trigger - shooter mid
+Left Bumper - stop intake
+Right Trigger - Transfer
+Right bumper - aim mode for turning
+*/
+
 @TeleOp
 public class TeleOpTest extends OpMode {
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
@@ -35,8 +50,6 @@ public class TeleOpTest extends OpMode {
 
     private double prevError = 0;
     private final ElapsedTime pdTimer = new ElapsedTime();
-
-
 
     @Override
     public void init() {
@@ -76,7 +89,6 @@ public class TeleOpTest extends OpMode {
 
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setDirection(DcMotorEx.Direction.REVERSE);
-        // Important for setVelocity to work
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
     @Override
@@ -139,34 +151,30 @@ public class TeleOpTest extends OpMode {
         telemetry.update();
     }
     public void Drive(String PRESET, double deadzone, double dt) {
-        double rStrafe = -gamepad1.left_stick_x;
-        double rVertical = gamepad1.left_stick_y;
-        double rHeading = -gamepad1.right_stick_x;
+        // apply deadzone remap before any other processing
+        double rStrafe = deadbandRemap(-gamepad1.left_stick_x, deadzone);
+        double rVertical = deadbandRemap(gamepad1.left_stick_y, deadzone);
+        double rHeading = deadbandRemap(-gamepad1.right_stick_x, deadzone);
 
         double strafe, vertical, heading;
 
-        if (Math.abs(rStrafe) < deadzone) rStrafe = 0;
-        if (Math.abs(rVertical) < deadzone) rVertical = 0;
-        if (Math.abs(rHeading) < deadzone) rHeading = 0;
-
         if (PRESET.equals("LERP")) {
             double lerpSpeed = TeleOpConfig.LERP_SPEED;
-
             strafe = lerp(prevStrafe, rStrafe, lerpSpeed, dt);
             vertical = lerp(prevVertical, rVertical, lerpSpeed, dt);
             heading = lerp(prevHeading, rHeading, lerpSpeed, dt);
+
             prevStrafe = strafe;
             prevVertical = vertical;
             prevHeading = heading;
         } else {
-            strafe = processInput(rStrafe, PRESET, deadzone);
-            vertical = processInput(rVertical, PRESET, deadzone);
-            heading = processInput(rHeading, PRESET, deadzone);
+            strafe = processInput(rStrafe, PRESET);
+            vertical = processInput(rVertical, PRESET);
+            heading = processInput(rHeading, PRESET);
         }
 
         if (gamepad1.right_bumper) {
             heading *= TeleOpConfig.AIM_TURN_SCALE;
-            strafe *= TeleOpConfig.AIM_TURN_SCALE;
             vertical *= TeleOpConfig.AIM_TURN_SCALE;
         }
 
@@ -188,18 +196,38 @@ public class TeleOpTest extends OpMode {
         leftBack.setPower(leftBackPower / max);
         rightBack.setPower(rightBackPower / max);
     }
-    private double processInput(double input, String preset, double deadzone) {
-        if (Math.abs(input) < deadzone) return 0.0;
+
+    /**
+     * Applies input shaping curves.
+     * Assumes input has already been processed by deadbandRemap.
+     */
+    private double processInput(double input, String preset) {
         switch (preset) {
-            case "QUADRATIC": return input * Math.abs(input);
-            case "EXPONENTIAL": return Math.pow(input, 3);
-            default: return input;
+            case "QUADRATIC":
+                return input * Math.abs(input);
+            case "CUBIC_BLEND":
+                double w = org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpConfig.CUBIC_BLEND_WEIGHT;
+                return (input * (1.0 - w)) + (Math.pow(input, 3) * w);
+            case "EXPONENTIAL":
+                return Math.pow(input, 3);
+            case "TANH":
+                final double a = org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpConfig.TANH_A;
+                return Math.tanh(a * input) / Math.tanh(a);
+            default:
+                return input;
         }
     }
+
     private double lerp(double current, double target, double speed, double dt) {
         double alpha = speed * dt;
         if (alpha > 1.0) alpha = 1.0;
         return current + (target - current) * alpha;
+    }
+
+    private double deadbandRemap(double input, double deadzone) {
+        if (Math.abs(input) < deadzone) return 0.0;
+        //remap remaining range
+        return Math.signum(input) * (Math.abs(input) - deadzone) / (1.0 - deadzone);
     }
 
     //NON DT FUNCTIONALITIES
