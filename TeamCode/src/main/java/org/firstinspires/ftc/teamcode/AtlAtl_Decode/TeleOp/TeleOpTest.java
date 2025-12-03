@@ -1,10 +1,8 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 
-// imu imports
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -15,32 +13,34 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp
 public class TeleOpTest extends OpMode {
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
-    private DcMotorEx intake;
-    private DcMotorEx transfer;
-    private DcMotorEx shooter;
-
+    private DcMotorEx intake, transfer, shooter;
     public IMU imu;
 
-    // memory for LERP preset
+    //mem for lerp
     private double prevStrafe = 0;
     private double prevVertical = 0;
     private double prevHeading = 0;
+    //mem for turntogoal
+    private double savedHeading = 0;
 
-    // shooter target (ticks/sec), switched by buttons
     private double targetVel = 0;
-    //private double TICKS_PER_REVOLUTION = shooter.getMotorType().getTicksPerRev();
-    private final double TICKS_PER_REVOLUTION = 560;
-    private final double CLOSE = (TeleOpConfig.shooter.CLOSE_RPM / 60.0) * TICKS_PER_REVOLUTION;
-    private final double MID = (TeleOpConfig.shooter.MID_RPM / 60.0) * TICKS_PER_REVOLUTION;
-    private final double FAR = (TeleOpConfig.shooter.FAR_RPM / 60.0) * TICKS_PER_REVOLUTION;
-    private final double DEFAULT = (TeleOpConfig.shooter.DEFAULT_RPM / 60.0) * TICKS_PER_REVOLUTION;
+    private final double CLOSE = ShooterConfig.CLOSE_TPS;
+    private final double MID = ShooterConfig.MID_TPS;
+    private final double FAR = ShooterConfig.FAR_TPS;
+    private final double DEFAULT = ShooterConfig.DEFAULT_TPS;
+
     private boolean cycleActive = false;
     private final ElapsedTime transferTimer = new ElapsedTime();
     private final ElapsedTime loopTimer = new ElapsedTime();
 
+    private double prevError = 0;
+    private final ElapsedTime pdTimer = new ElapsedTime();
+
+
+
     @Override
     public void init() {
-        //init dt
+
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
         leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
@@ -56,148 +56,128 @@ public class TeleOpTest extends OpMode {
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        // imu init
+        //imu init
         imu = hardwareMap.get(IMU.class, "imu");
-
-        // IMU orientation
-        // IMPORTANT TODO: fill in these values based on
-        //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
         RevHubOrientationOnRobot.UsbFacingDirection usbDirection = RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
-        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
-
-        imu.initialize(new IMU.Parameters(orientationOnRobot));
-
+        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(logoDirection, usbDirection)));
         imu.resetYaw();
-        loopTimer.reset();
 
-        // init everything else
+        loopTimer.reset();
+        pdTimer.reset();
+
         intake = hardwareMap.get(DcMotorEx.class, "intake");
-        intake.setDirection(DcMotorEx.Direction.FORWARD);
+        intake.setDirection(DcMotorEx.Direction.REVERSE);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        intake.setPower(0);
 
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
         transfer.setDirection(DcMotorEx.Direction.REVERSE);
         transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        transfer.setPower(0);
 
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setDirection(DcMotorEx.Direction.REVERSE);
+        // Important for setVelocity to work
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        shooter.setPower(0);
-
     }
-
     @Override
     public void loop() {
-        //from config
-        Drive(TeleOpConfig.DRIVE_PRESET, TeleOpConfig.DRIVE_DEADZONE);
+        double loopDt = loopTimer.seconds();
+        loopTimer.reset();
+
+        double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+
         Intake();
         Shooter();
         Transfer();
 
-        // imu thingy, test
-
-        double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        //imu turntogoal logic
+        if (gamepad1.dpad_up) {
+            savedHeading = currentHeading;
+        }
         if (gamepad1.x) {
-            double targetHeading = 90.0; //change to whatever goal is gonna be
-            double error = targetHeading - currentHeading;
-            // +- 5 thresh
-            if (Math.abs(error) > 5.0) {
-                double kP = TeleOpConfig.imu_kP;
-                double turnPower = error * kP;
-                if (turnPower > 0.5) turnPower = 0.5;
-                if (turnPower < -0.5) turnPower = -0.5;
+            double error = savedHeading - currentHeading;
+            //so that it doesnt turn over 180 degress(the long way around)
+            while (error > 180) error -= 360;
+            while (error <= -180) error += 360;
 
-                double factor = TeleOpConfig.imu_turn_factor;
-                turnPower *= factor;
+            double pdDt = pdTimer.seconds();
+            pdTimer.reset();
+            if (pdDt < 1e-3) pdDt = 1e-3;
 
+            double derivative = (error - prevError) / pdDt;
+            prevError = error;
+
+            double kP = TeleOpConfig.imu_kP;
+            double kD = TeleOpConfig.imu_kD;
+            double turnPower = (error * kP) + (derivative * kD);
+
+            turnPower *= TeleOpConfig.imu_turn_factor;
+            if (turnPower > 0.5) turnPower = 0.5;
+            if (turnPower < -0.5) turnPower = -0.5;
+
+            if (Math.abs(error) > 2.0) {
                 leftFront.setPower(turnPower);
                 leftBack.setPower(turnPower);
                 rightFront.setPower(-turnPower);
                 rightBack.setPower(-turnPower);
             } else {
-                leftFront.setPower(0);
-                leftBack.setPower(0);
-                rightFront.setPower(0);
-                rightBack.setPower(0);
+                leftFront.setPower(0); rightFront.setPower(0);
+                leftBack.setPower(0); rightBack.setPower(0);
             }
+
+            telemetry.addData("IMU Status", "ALIGNING");
+            telemetry.addData("Target", savedHeading);
+            telemetry.addData("Err", error);
+
+        } else {
+            Drive(TeleOpConfig.DRIVE_PRESET, TeleOpConfig.DRIVE_DEADZONE, loopDt);
         }
 
-        // telemetry for debug with imu
-        telemetry.addData("Current Heading", "%.2f",
-                imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-        telemetry.addData("Aim Mode Active (right bumper)", gamepad1.right_bumper);
-
-        double currentVel = Math.abs(shooter.getVelocity());
-        telemetry.addData("--- Shooter ---", "");
-        telemetry.addData("Target Vel", "%.1f", targetVel);
-        telemetry.addData("Current Vel", "%.1f", currentVel);
-        telemetry.addData("Cycle Active?", cycleActive);
-        telemetry.addData("Feed Timer", "%.0f", transferTimer.milliseconds());
-        boolean shooterReady = Math.abs(currentVel - targetVel) < TeleOpConfig.shooter.tolerance && targetVel > 0;
-        telemetry.addData("Shooter Ready?", shooterReady);
+        telemetry.addData("Heading", "%.1f", currentHeading);
+        telemetry.addData("Shooter Vel", "%.0f", Math.abs(shooter.getVelocity()));
+        telemetry.addData("Target Vel", "%.0f", targetVel);
         telemetry.update();
     }
-
-    public void Drive(String PRESET, double deadzone) {
+    public void Drive(String PRESET, double deadzone, double dt) {
         double rStrafe = -gamepad1.left_stick_x;
         double rVertical = gamepad1.left_stick_y;
         double rHeading = -gamepad1.right_stick_x;
 
         double strafe, vertical, heading;
 
-        // apply deadzone first
         if (Math.abs(rStrafe) < deadzone) rStrafe = 0;
         if (Math.abs(rVertical) < deadzone) rVertical = 0;
         if (Math.abs(rHeading) < deadzone) rHeading = 0;
 
         if (PRESET.equals("LERP")) {
-
-            // lerp is special (time-based smoothing)
             double lerpSpeed = TeleOpConfig.LERP_SPEED;
 
-
-            strafe = lerp(prevStrafe, rStrafe, lerpSpeed);
-            vertical = lerp(prevVertical, rVertical, lerpSpeed);
-            heading = lerp(prevHeading, rHeading, lerpSpeed);
-
-            // clamp small lerp outputs?
-            if (Math.abs(strafe) < deadzone) strafe = 0;
-            if (Math.abs(vertical) < deadzone) vertical = 0;
-            if (Math.abs(heading) < deadzone) heading = 0;
-
-            // save for next loop
+            strafe = lerp(prevStrafe, rStrafe, lerpSpeed, dt);
+            vertical = lerp(prevVertical, rVertical, lerpSpeed, dt);
+            heading = lerp(prevHeading, rHeading, lerpSpeed, dt);
             prevStrafe = strafe;
             prevVertical = vertical;
             prevHeading = heading;
-
         } else {
-            // standard Curves (LINEAR/QUAD/EXPONENTIAL)
             strafe = processInput(rStrafe, PRESET, deadzone);
             vertical = processInput(rVertical, PRESET, deadzone);
             heading = processInput(rHeading, PRESET, deadzone);
         }
 
-        //aim mode from config
         if (gamepad1.right_bumper) {
-            heading *= TeleOpConfig.AIM_TURN_SCALE; //slow turning
+            heading *= TeleOpConfig.AIM_TURN_SCALE;
+            strafe *= TeleOpConfig.AIM_TURN_SCALE;
+            vertical *= TeleOpConfig.AIM_TURN_SCALE;
         }
 
-        // apply speedFactor
         vertical *= TeleOpConfig.speedFactor;
         heading *= TeleOpConfig.speedFactor;
         strafe *= TeleOpConfig.speedFactor;
 
-
-        //standard mec math
         double leftFrontPower = vertical + strafe + heading;
         double rightFrontPower = vertical + strafe - heading;
         double leftBackPower = vertical - strafe + heading;
         double rightBackPower = vertical - strafe - heading;
-
-        //noramlize
         double max = Math.max(1.0, Math.max(
                 Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower)),
                 Math.max(Math.abs(leftBackPower), Math.abs(rightBackPower))
@@ -207,69 +187,46 @@ public class TeleOpTest extends OpMode {
         rightFront.setPower(rightFrontPower / max);
         leftBack.setPower(leftBackPower / max);
         rightBack.setPower(rightBackPower / max);
-     /*   if (orientation < 10) {
-            leftFront.setPower(1);
-            leftBack.setPower(1);
-            rightBack.setPower(-1);
-            rightFront.setPower(-1);
-        }*/
     }
-
-    // helper for curves
     private double processInput(double input, String preset, double deadzone) {
         if (Math.abs(input) < deadzone) return 0.0;
         switch (preset) {
-            case "QUADRATIC":
-                return input * Math.abs(input);
-            case "EXPONENTIAL":
-                return Math.pow(input, 3);
-            default:
-                return input;
+            case "QUADRATIC": return input * Math.abs(input);
+            case "EXPONENTIAL": return Math.pow(input, 3);
+            default: return input;
         }
     }
-    private double lerp(double current, double target, double speed) {
-        double dt = loopTimer.seconds();
-        loopTimer.reset();
-        double alpha = speed * dt; //scale by time
-
+    private double lerp(double current, double target, double speed, double dt) {
+        double alpha = speed * dt;
         if (alpha > 1.0) alpha = 1.0;
         return current + (target - current) * alpha;
     }
 
-
-    //non dt functionalities
-
+    //NON DT FUNCTIONALITIES
     private boolean intakeStopped = false;
     private boolean intakePrev = false;
 
     public void Intake() {
-        if (gamepad1.left_bumper && !intakePrev) {
-            intakeStopped = !intakeStopped;
-        }
+        if (gamepad1.left_bumper && !intakePrev) intakeStopped = !intakeStopped;
         intakePrev = gamepad1.left_bumper;
 
-        double intakePower = intakeStopped ? 0 : 1.0;
-        intake.setPower(intakePower);
+        double p = gamepad1.a ? -1.0 : (intakeStopped ? 0 : 1.0);
+        intake.setPower(p);
     }
 
     public void Transfer() {
         boolean btnPressed = gamepad1.right_trigger > 0.2;
-
         double currentVel = Math.abs(shooter.getVelocity());
-        boolean shooterReady = Math.abs(currentVel - targetVel) < TeleOpConfig.shooter.tolerance && targetVel > 0;
+        boolean shooterReady = Math.abs(currentVel - targetVel) < ShooterConfig.tolerance && targetVel > 0;
 
         if (cycleActive) {
-            if (transferTimer.milliseconds() < TeleOpConfig.shooter.feedtime) {
+            if (transferTimer.milliseconds() < ShooterConfig.feedtime) {
                 transfer.setPower(0.67);
             } else {
                 transfer.setPower(0);
-                if (shooterReady) {
-                    //end cycle
-                    cycleActive = false;
-                }
+                if (shooterReady) cycleActive = false;
             }
         } else if (btnPressed) {
-            //not in a cycle, driver wants to shoot, flywheel is ready
             if (shooterReady) {
                 cycleActive = true;
                 transferTimer.reset();
@@ -283,23 +240,12 @@ public class TeleOpTest extends OpMode {
     }
 
     public void Shooter() {
+        if (gamepad1.left_trigger > 0.1) targetVel = MID;
+        else if (gamepad1.b) targetVel = FAR;
+        else if (gamepad1.y) targetVel = CLOSE;
+        else targetVel = DEFAULT;
 
-        if (gamepad1.left_trigger > 0.1) {
-            targetVel = CLOSE;
-
-        } else if (gamepad1.b) {
-            targetVel = MID;
-
-        } else if (gamepad1.y) {
-            targetVel = FAR;
-
-        } else {
-            targetVel = DEFAULT;
-        }
-        if (targetVel > 0) {
-            shooter.setVelocity(targetVel);
-        } else {
-            shooter.setPower(0);
-        }
+        if (targetVel > 0) shooter.setVelocity(targetVel);
+        else shooter.setPower(0);
     }
 }
