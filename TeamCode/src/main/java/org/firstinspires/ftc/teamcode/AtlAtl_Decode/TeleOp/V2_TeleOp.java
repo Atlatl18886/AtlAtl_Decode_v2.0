@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 /*
@@ -21,14 +20,14 @@ Y - Shooter Close
 X - turn to saved heading
 B - Shooter Far
 A - Reverse intake (outtake)
-Left Trigger - shooter mid
-Left Bumper - stop intake
+Left Trigger - stop intake
+Left Bumper - toggle intake
 Right Trigger - Transfer
 Right bumper - aim mode for turning
 */
 
 @TeleOp
-public class TeleOpTest extends OpMode {
+public class V2_TeleOp extends OpMode {
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
     private DcMotorEx intake, transfer, shooter;
     public IMU imu;
@@ -41,20 +40,6 @@ public class TeleOpTest extends OpMode {
     private double savedHeading = 0;
 
     private double targetVel = 0;
-    private final double CLOSE = ShooterConfig.CLOSE_TPS;
-    private final double MID = ShooterConfig.MID_TPS;
-    private final double FAR = ShooterConfig.FAR_TPS;
-    private final double DEFAULT = ShooterConfig.DEFAULT_TPS;
-    private double prevShooterError = 0;
-    private double shooterIntegral = 0;
-    private final ElapsedTime shooterTimer = new ElapsedTime();
-    private final double shooter_Kp = ShooterConfig.shooter_Kp;
-    private double shooter_Ki = ShooterConfig.shooter_Ki;
-    private final double shooter_Kd = ShooterConfig.shooter_Kd;
-    private final double shooter_Kf = ShooterConfig.shooter_Kf;
-
-    private boolean cycleActive = false;
-    private final ElapsedTime transferTimer = new ElapsedTime();
     private final ElapsedTime loopTimer = new ElapsedTime();
 
     private double prevError = 0;
@@ -206,14 +191,6 @@ public class TeleOpTest extends OpMode {
         switch (preset) {
             case "QUADRATIC":
                 return input * Math.abs(input);
-            case "CUBIC_BLEND":
-                double w = org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpConfig.CUBIC_BLEND_WEIGHT;
-                return (input * (1.0 - w)) + (Math.pow(input, 3) * w);
-            case "EXPONENTIAL":
-                return Math.pow(input, 3);
-            case "TANH":
-                final double a = org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpConfig.TANH_A;
-                return Math.tanh(a * input) / Math.tanh(a);
             default:
                 return input;
         }
@@ -230,127 +207,42 @@ public class TeleOpTest extends OpMode {
     }
 
     //NON DT FUNCTIONALITIES
-    private boolean intakeStopped = false;
     private boolean intakePrev = false;
-
-    public void Intake() {
-        if (gamepad2.left_bumper && !intakePrev) intakeStopped = !intakeStopped;
-        intakePrev = gamepad1.left_bumper;
-
-        double p = gamepad2.a ? -1.0 : (intakeStopped ? 0 : 1.0);
-        intake.setPower(p);
-    }
-    public void Transfer() {
-        double currentVel = Math.abs(shooter.getVelocity());
-        boolean btnPressed = gamepad2.right_trigger > 0.2;
-
-        boolean shooterReady = Math.abs(currentVel - targetVel) < ShooterConfig.tolerance && targetVel > 0;
-
-        if (cycleActive) {
-            if (transferTimer.milliseconds() < ShooterConfig.feedtime) {
-                transfer.setPower(0.67);
-            } else {
-                transfer.setPower(0);
-                if (shooterReady) cycleActive = false;
-            }
-        } else if (btnPressed) {
-            if (shooterReady) {
-                cycleActive = true;
-                transferTimer.reset();
-                transfer.setPower(0.67);
-            } else {
-                transfer.setPower(0.67);
-            }
-        } else {
-            transfer.setPower(-0.8);
-        }
-    }
-/*
---OLD SHOOTER LOGIC
- public void Shooter() {
-    if (gamepad2.left_trigger > 0.1) targetVel = MID;
-    else if (gamepad2.b) targetVel = FAR;
-    else if (gamepad2.y) targetVel = CLOSE;
-    else targetVel = DEFAULT;
-
-    if (targetVel > 0) shooter.setVelocity(targetVel);
-    else shooter.setPower(0);
-
-    telemetry.addData("Shooter Vel", "%.0f", Math.abs(shooter.getVelocity()));
-    telemetry.addData("Target Vel", "%.0f", targetVel);
-
-    ADD TO INIT:
-    // in init()
-double kF = 1.0 / ShooterConfig.MAX_TPS;
-
-PIDFCoefficients pidf = new PIDFCoefficients(
-    0.005,   // P
-    0.0,     // I
-    0.0,     // D
-    kF       // F
-);
-
-shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidf);
-
-}
- */
+    private boolean intakeOff = false;
     /*
-    public void Shooter() {
-        if (gamepad2.left_trigger > 0.1) targetVel = MID;
-        else if (gamepad2.b) targetVel = FAR;
-        else if (gamepad2.y) targetVel = CLOSE;
-        else targetVel = DEFAULT;
+    public enum intakeState {
+            FORWARD,
+            REVERSE,
+            OFF;
+    }*/
+    public void Intake() {
+        boolean bumperPressed = gamepad2.left_bumper;
 
-        //static behavior
-        if (targetVel == 0) {
-            shooter.setPower(0);
-            shooterIntegral = 0;
-            prevShooterError = 0;
-            return;
-        }
+        if (bumperPressed && !intakePrev) intakeOff = !intakeOff;
 
-        double dt = shooterTimer.seconds();
-        shooterTimer.reset();
-        double currentVel = Math.abs(shooter.getVelocity());
-        double error = targetVel - currentVel;
-
-        // P--correction
-        double p = error * shooter_Kp;
-
-        if (Math.abs(error) < 200) {
-            shooterIntegral += error * dt;
-        }
-        double i = shooterIntegral * shooter_Ki;
-        // D--dampens oscilation
-        double derivative = (error - prevShooterError) / dt;
-        double d = derivative * shooter_Kd;
-
-        // feedforward-predicts power
-        double f = targetVel * shooter_Kf;
-        double power = f + p + i + d;
-
-        power = Math.max(0, Math.min(1.0, power));
-        shooter.setPower(power);
-        prevShooterError = error;
-        telemetry.addData("Shooter Power", "%.2f", power);
-        telemetry.addData("Shooter Error", "%.0f", error);
-        telemetry.addData("Shooter Vel", "%.0f", Math.abs(shooter.getVelocity()));
-        telemetry.addData("SHooter Target", targetVel);
+        double power = intakeOff ? 1.0 : 0.0;
+        intake.setPower(power);
+        intakePrev = bumperPressed;
     }
-    */
+
+    private boolean transferStopped = false;
+    private boolean transferPrev = false;
+    public void Transfer() {
+        if ((gamepad2.right_trigger>0.1) && !transferPrev) transferStopped = !transferStopped;
+        transferPrev = gamepad2.right_trigger >0.1;
+
+        double pow2 = (gamepad2.left_trigger > 0.1) ? 1.0 : (transferStopped ? 0 : -0.75);
+        transfer.setPower(pow2);
+    }
     public void Shooter() {
-        if (gamepad2.left_trigger > 0.1) {
-            targetVel = MID;
+        if (gamepad2.right_bumper) {
             shooter.setPower(0.5);
         } else if (gamepad2.b) {
-            targetVel = FAR;
-            shooter.setPower(0.8);
+            shooter.setPower(0.7);
         } else if (gamepad2.y) {
-            targetVel = CLOSE;
-            shooter.setPower(0.3);
+            shooter.setPower(1.0);
         } else {
-            targetVel = DEFAULT;
-            shooter.setPower(0.15);
+            shooter.setPower(0.3);
         }
 
         telemetry.addData("Shooter Vel", "%.0f", Math.abs(shooter.getVelocity()));

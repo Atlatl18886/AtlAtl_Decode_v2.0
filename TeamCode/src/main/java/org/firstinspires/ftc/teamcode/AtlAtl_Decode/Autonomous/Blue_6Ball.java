@@ -9,8 +9,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-@Autonomous(name="Auton_6Ball_Diagnostics", group="FTC_Decode")
-public class Auton_6Ball_Diagnostics extends LinearOpMode {
+@Autonomous(name="Blue_6Ball", group="FTC_Decode")
+public class Blue_6Ball extends LinearOpMode {
 
     // --- Hardware Declarations ---
     private DcMotorEx leftFront, leftBack, rightFront, rightBack;
@@ -19,9 +19,10 @@ public class Auton_6Ball_Diagnostics extends LinearOpMode {
     private DcMotorEx shooterMotor;
 
     // --- Configuration Variables (TUNE THESE TIMES ON THE FIELD) ---
-    private static final double SHOOTER_POWER = 0.85;
-    private static final int SHOOTER_FEED_TIME_MS = 2250;
-    private static final double INTAKE_TRANSFER_POWER = 0.6;
+    private static final double SHOOTER_POWER = 0.6;
+
+    private static final int SHOOTER_FEED_TIME_MS = 2500;
+    private static final double INTAKE_TRANSFER_POWER = 0.9;
     private static final double DRIVE_SPEED = 0.5;
 
     // TUNE THESE TIME CONSTANTS FOR MOVEMENT:
@@ -36,6 +37,27 @@ public class Auton_6Ball_Diagnostics extends LinearOpMode {
         telemetry.addData("Status", "Attempting Hardware Initialization...");
         telemetry.update();
 
+        // --- Hardware Initialization with Error Handling ---
+        try {
+            leftFront  = hardwareMap.get(DcMotorEx.class, "leftFront");
+            leftBack   = hardwareMap.get(DcMotorEx.class, "leftBack");
+            rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
+            rightBack  = hardwareMap.get(DcMotorEx.class, "rightBack");
+            intakeMotor = hardwareMap.get(DcMotorEx.class, "intake");
+            transferMotor = hardwareMap.get(DcMotorEx.class, "transfer");
+            shooterMotor = hardwareMap.get(DcMotorEx.class, "shooter");
+        } catch (Exception e) {
+            // This catches the specific error you are seeing
+            telemetry.addData("ERROR:", "Hardware device not found!");
+            telemetry.addData("Error Detail:", e.getMessage());
+            telemetry.addData("FIX:", "Check your Driver Station Configuration names VERY carefully.");
+            telemetry.addData("Expected Names:", "leftFront, rightFront, etc. MUST MATCH EXACTLY.");
+            telemetry.update();
+            // Stop the OpMode if configuration is wrong
+            waitForStart();
+            return; // Exit the runOpMode method early
+        }
+
         // If we reach here, all hardware was mapped successfully.
         telemetry.addData("Status", "Hardware Mapped Successfully.");
 
@@ -45,8 +67,9 @@ public class Auton_6Ball_Diagnostics extends LinearOpMode {
         rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
         rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
         intakeMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        transferMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        shooterMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        transferMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        shooterMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
 
         // Set all drive motors to RUN_WITHOUT_ENCODER for time-based movement
         setChassisRunMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -59,70 +82,68 @@ public class Auton_6Ball_Diagnostics extends LinearOpMode {
         runtime.reset();
 
         if (opModeIsActive()) {
-            /*
-            setTransfer(-0.8);
+
+            intakeMotor.setPower(1);
+            transferMotor.setPower(-1);
             // --- Step 1: Shoot Preloaded 3 Balls ---
             telemetry.addData("Auto Step", "1/4: Shooting initial 3 balls.");
             telemetry.update();
+            driveBackward(DRIVE_SPEED, 1000);
+            sleep(1000);
             scoreArtifacts(SHOOTER_FEED_TIME_MS);
-
-            // --- Step 2: Drive to the Spike Marks and collect 3 more balls ---
-            telemetry.addData("Auto Step", "2/4: Driving to collection zone.");
-            telemetry.update();
-            setIntake(INTAKE_TRANSFER_POWER);
-            driveForward(DRIVE_SPEED, DRIVE_TO_SPIKE_MS);
-
-            // --- Step 3: Return to Goal Position ---
-            telemetry.addData("Auto Step", "3/4: Returning to goal.");
-            telemetry.update();
-            driveBackward(DRIVE_SPEED, RETURN_TO_GOAL_MS);
-            setIntake(0.0);
-
-            // --- Step 4: Shoot the next 3 balls (Total 6) ---
-            telemetry.addData("Auto Step", "4/4: Shooting second set of 3 balls.");
-            telemetry.update();
+            sleep(1000);
+            /*
+            turn(-0.4);
+            driveBackward(DRIVE_SPEED, 2000);
+            turn(-0.6);
+            sleep(400);
+            intakeMotor.setPower(1);
+            transferMotor.setPower(1);
+            driveForward(DRIVE_SPEED, 2000);
+            driveBackward(DRIVE_SPEED, 2500);
+            turn(0.4);
+            driveForward(DRIVE_SPEED, 2000);
             scoreArtifacts(SHOOTER_FEED_TIME_MS);
+            sleep(1000);
+            turn(-0.2);
+            driveBackward(DRIVE_SPEED, 3000);
+            turn(-0.4);
+            driveForward(DRIVE_SPEED, 2000);
+            driveBackward(DRIVE_SPEED, 2000);
+            turn(0.4);
+            driveForward(DRIVE_SPEED, 2000);
+            scoreArtifacts(SHOOTER_FEED_TIME_MS);
+            sleep(2000);
+            intakeMotor.setPower(0);
+            transferMotor.setPower(0);
 
-            telemetry.addData("Status", "6-Ball Auto Complete.");
-            telemetry.update();
              */
-            //setTransfer(-0.8);
-            //shoot(700, 1500, 150);
-            //shoot(800, 1500, 150);
-            //driveBackward(-1, 200);
-            driveForward(1, 250);
         }
     }
 
     // --- Helper Functions (Same as previous code) ---
-    /*
     private void scoreArtifacts(int durationMs) {
-        shooterMotor.setPower(SHOOTER_POWER);
-        sleep(500);
-        intakeMotor.setPower(INTAKE_TRANSFER_POWER);
-        transferMotor.setPower(INTAKE_TRANSFER_POWER);
-        sleep(durationMs);
-        shooterMotor.setPower(0.0);
-        intakeMotor.setPower(0.0);
-        transferMotor.setPower(0.0);
+        shooterMotor.setPower(0.67);
+        sleep(3000);
+        transferMotor.setPower(1);
+        sleep(400);
+        shooterMotor.setPower(0.67);
+        transferMotor.setPower(-1);
+        sleep(2000);
+        transferMotor.setPower(1);
+        sleep(400);
+        transferMotor.setPower(-1);
+        shooterMotor.setPower(0.67);
+        sleep(2000);
+        transferMotor.setPower(1);
+        sleep(5000);
+        transferMotor.setPower(0);
     }
-    */
-    private void shoot(double power, int reload, int tolerance) {
-        if (shooterMotor.getVelocity() < (power + tolerance) && shooterMotor.getVelocity() > (power -tolerance)) {
-            shooterMotor.setVelocity(power);
-        }
-        sleep(reload);
-        setTransfer(1);
-        sleep(200);
-    }
-
-
-    private void setIntake(double power) {
+    private void setIntakeTransferPower(double power) {
         intakeMotor.setPower(power);
-    }
-    private void setTransfer(double power) {
         transferMotor.setPower(power);
     }
+
     public void driveForward(double power, int durationMs) {
         setChassisPower(Math.abs(power));
         sleep(durationMs);
@@ -140,6 +161,13 @@ public class Auton_6Ball_Diagnostics extends LinearOpMode {
         leftBack.setPower(power);
         rightFront.setPower(power);
         rightBack.setPower(power);
+    }
+
+    private void turn(double power) {
+        leftFront.setPower(power);
+        leftBack.setPower(power);
+        rightFront.setPower(-power);
+        rightBack.setPower(-power);
     }
 
     private void setChassisRunMode(DcMotor.RunMode mode) {

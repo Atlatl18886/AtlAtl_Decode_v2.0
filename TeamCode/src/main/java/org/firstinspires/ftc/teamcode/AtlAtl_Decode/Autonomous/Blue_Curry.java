@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -12,8 +11,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpConfig;
 
-@Autonomous(name="BasicAuton", group="V2")
-public class BasicAuton extends LinearOpMode {
+@Autonomous(name="Blue Curry", group="V2")
+public class Blue_Curry extends LinearOpMode {
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
     private DcMotorEx intake, transfer, shooter;
     private IMU imu;
@@ -52,14 +51,14 @@ public class BasicAuton extends LinearOpMode {
         imu.resetYaw();
 
         intake = hardwareMap.get(DcMotorEx.class, "intake");
-        intake.setDirection(DcMotor.Direction.REVERSE);
+        intake.setDirection(DcMotor.Direction.FORWARD);
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
         transfer.setDirection(DcMotorSimple.Direction.REVERSE);
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
 
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         intake.setPower(0);
         transfer.setPower(0);
@@ -71,16 +70,30 @@ public class BasicAuton extends LinearOpMode {
         waitForStart();
 
         //TODO: PATHING
-        //transfer.setPower(-0.8);
-        //intake.setPower(1.0);
-        drive(-12, 5.0, 3.0);
-        //intake.setPower(0);
-        //strafe(12, 3.0, 3.0);
-        //turnToHeading(90, 3.0);
-        //turnToHeading(0, 3.0);
+        transfer.setPower(-0.8);
+        intake.setPower(1.0);
+        drive(4, 3, 8);
+        strafe(-2, 3, 4);
+        transfer.setPower(0);
+        intake.setPower(0);
+        turnToHeading(25, 4);
+        shooter.setPower(1);
+        sleep(5000);
+        intake.setPower(1);
+        transfer.setPower(1);
+        sleep(150);
+        transfer.setPower(-1);
+        sleep(5000);
+        transfer.setPower(1);
+        sleep(150);
+        transfer.setPower(-1);
+        sleep(300);
+        intake.setPower(0);
+        transfer.setPower(0);
+        shooter.setPower(0);
     }
 
-//helper methods
+    //helper methods
     private int inchesToTicks(double inches) {
         return (int)(inches * TICKS_PER_INCH);
     }
@@ -168,7 +181,7 @@ public class BasicAuton extends LinearOpMode {
             //power clamping
             if (turnPower > 0.6) turnPower = 0.6;
             if (turnPower < -0.6) turnPower = -0.6;
-            if (Math.abs(turnPower) < 0.05) turnPower = Math.copySign(0.05, turnPower);
+            if (Math.abs(turnPower) < 0.10) turnPower = Math.copySign(0.05, turnPower);
 
             leftFront.setPower(turnPower);
             leftBack.setPower(turnPower);
