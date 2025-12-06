@@ -71,13 +71,13 @@ public class BasicAuton extends LinearOpMode {
         waitForStart();
 
         //TODO: PATHING
-        transfer.setPower(-0.8);
-        intake.setPower(1.0);
-        drive(12, 5.0, 3.0);
-        intake.setPower(0);
-        strafe(12, 3.0, 3.0);
-        turnToHeading(90, 3.0);
-        turnToHeading(0, 3.0);
+        //transfer.setPower(-0.8);
+        //intake.setPower(1.0);
+        drive(-12, 5.0, 3.0);
+        //intake.setPower(0);
+        //strafe(12, 3.0, 3.0);
+        //turnToHeading(90, 3.0);
+        //turnToHeading(0, 3.0);
     }
 
 //helper methods
@@ -139,21 +139,23 @@ public class BasicAuton extends LinearOpMode {
         ElapsedTime timer = new ElapsedTime();
         ElapsedTime pdTimer = new ElapsedTime();
         double prevError = 0;
-        double kP = TeleOpConfig.imu_kP; // * TeleOpConfig.imu_turn_factor;
+        double kP = TeleOpConfig.imu_kP;
         double kD = TeleOpConfig.imu_kD;
 
+        leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         while (opModeIsActive() && timer.seconds() < timeoutSec) {
             double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
             double error = targetHeading - currentHeading;
-
             //limit error
             while (error > 180) error -= 360;
             while (error <= -180) error += 360;
-
+            // Success condition
             if (Math.abs(error) < 2.0) {
                 break;
             }
-
             double dt = pdTimer.seconds();
             pdTimer.reset();
             if (dt < 1e-3) dt = 1e-3;
@@ -163,6 +165,7 @@ public class BasicAuton extends LinearOpMode {
 
             double turnPower = (error * kP) + (derivative * kD);
 
+            //power clamping
             if (turnPower > 0.6) turnPower = 0.6;
             if (turnPower < -0.6) turnPower = -0.6;
             if (Math.abs(turnPower) < 0.05) turnPower = Math.copySign(0.05, turnPower);
@@ -171,9 +174,11 @@ public class BasicAuton extends LinearOpMode {
             leftBack.setPower(turnPower);
             rightFront.setPower(-turnPower);
             rightBack.setPower(-turnPower);
+            //debug
             telemetry.addData("Target", targetHeading);
             telemetry.addData("Current", currentHeading);
             telemetry.addData("Error", error);
+            telemetry.addData("Power", turnPower);
             telemetry.update();
         }
         stopAll();
