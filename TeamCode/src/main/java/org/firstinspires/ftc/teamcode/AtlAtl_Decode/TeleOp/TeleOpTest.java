@@ -268,17 +268,14 @@ public class TeleOpTest extends OpMode {
 /*
 --OLD SHOOTER LOGIC--
  public void Shooter() {
-    // Pick a velocity preset
     if (gamepad2.left_trigger > 0.1) targetVel = MID;
     else if (gamepad2.b) targetVel = FAR;
     else if (gamepad2.y) targetVel = CLOSE;
     else targetVel = DEFAULT;
 
-    // Apply velocity or stop
     if (targetVel > 0) shooter.setVelocity(targetVel);
     else shooter.setPower(0);
 
-    // Simple telemetry
     telemetry.addData("Shooter Vel", "%.0f", Math.abs(shooter.getVelocity()));
     telemetry.addData("Target Vel", "%.0f", targetVel);
 
