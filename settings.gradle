@@ -1,2 +1,14 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = "https://repo.dairy.foundation/releases" }
+    }
+}
+
+// Ensure the include lines follow this block
+include ':FtcRobotController'
+include ':TeamCode'
+
+// ... any other include/rootProject statements ...
 include ':FtcRobotController'
 include ':TeamCode'

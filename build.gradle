@@ -8,11 +8,15 @@ buildscript {
     repositories {
         mavenCentral()
         google()
+        maven { url = "https://repo.dairy.foundation/releases" }
     }
     dependencies {
         // Note for FTC Teams: Do not modify this yourself.
         classpath 'com.android.tools.build:gradle:8.7.0'
     }
+}
+plugins {
+    id 'dev.frozenmilk.sinister.sloth.load' version '0.2.4' apply false
 }
 
 // This is now required because aapt2 has to be downloaded from the
