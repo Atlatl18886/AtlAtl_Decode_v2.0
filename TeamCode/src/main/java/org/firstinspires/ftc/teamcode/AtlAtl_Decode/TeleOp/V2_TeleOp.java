@@ -28,8 +28,13 @@ Right bumper - aim mode for turning
 
 @TeleOp
 public class V2_TeleOp extends OpMode {
-    private DcMotorEx leftFront, rightFront, leftBack, rightBack;
-    private DcMotorEx intake, transfer, shooter;
+    private DcMotorEx leftFront;
+    private DcMotorEx rightFront;
+    private DcMotorEx leftBack;
+    private DcMotorEx rightBack;
+    private DcMotorEx intake;
+    private DcMotorEx transfer;
+    private DcMotorEx shooter;
     public IMU imu;
 
     //mem for lerp

@@ -8,8 +8,6 @@ public class ShooterConfig {
     public static double CLOSE_TPS = 260;
     public static double FAR_TPS = 1400;
     public static double DEFAULT_TPS = 180;
-    public static double tolerance = 5000; // +/- rpm wiggle room for transfer cycle to initiate
-    public static double feedtime = 1; //ms time for one ball through trnasfer
 
     public static double shooter_Kf = 0.00037; // 1.0/rough max tps
     public static double shooter_Kp = 0.00075;  // Adjust if reaction is too slow
