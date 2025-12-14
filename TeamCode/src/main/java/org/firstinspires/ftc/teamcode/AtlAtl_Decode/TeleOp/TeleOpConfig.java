@@ -6,7 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 public class TeleOpConfig {
 
     // DRIVE CONFIG
-    public static String DRIVE_PRESET = "QUADRATIC"; //"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT), "TANH", "CUBIC_BLEND"
+    public static final String DRIVE_PRESET = "QUADRATIC"; //"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT), "TANH", "CUBIC_BLEND"
 
     public static double speedFactor = 1; //AKA SENS, range 0 to 1, percentage speed - 1 is full speed, 435 rpm
     public static double DRIVE_DEADZONE = 0.07; // the first 7.5% of joystick movement is ignored, prevents accidentals
@@ -21,5 +21,8 @@ public class TeleOpConfig {
     //add kd in tiny amounts until reduced overshoot and decreased ocsillation, if sluggish/stalls decrease
     public static final double imu_kD = 0.01; //deriv gain, also retune
     public static double imu_turn_factor = 1;
+    public static final double learn_alfa = 0.02;
+    public static final double slipGain = 0.7; //how hard to back off
+    public static final double min_transfer = 0.25;//dont completely stop
 
 }
