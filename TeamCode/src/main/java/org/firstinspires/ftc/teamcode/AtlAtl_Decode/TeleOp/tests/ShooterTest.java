@@ -1,8 +1,11 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.ShooterConfig;
+
 @TeleOp
 public class ShooterTest extends OpMode {
     private DcMotorEx shooter;
