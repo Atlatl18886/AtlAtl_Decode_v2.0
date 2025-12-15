@@ -6,9 +6,9 @@ import com.acmerobotics.dashboard.config.Config;
 public class TeleOpConfig {
 
     // DRIVE CONFIG
-    public static final String DRIVE_PRESET = "QUADRATIC"; //"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT), "TANH", "CUBIC_BLEND"
+    public static final String DRIVE_PRESET = "TANH"; //"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT), "TANH", "CUBIC_BLEND"
 
-    public static double speedFactor = 1; //AKA SENS, range 0 to 1, percentage speed - 1 is full speed, 435 rpm
+    public static double speedFactor = 0.9; //AKA SENS, range 0 to 1, percentage speed - 1 is full speed, 435 rpm
     public static double DRIVE_DEADZONE = 0.07; // the first 7.5% of joystick movement is ignored, prevents accidentals
     public static double AIM_TURN_SCALE = 0.15;  // turning slowdown when A is held
 
