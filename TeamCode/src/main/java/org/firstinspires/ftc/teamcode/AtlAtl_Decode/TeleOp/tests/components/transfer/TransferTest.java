@@ -1,6 +1,6 @@
 /*package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests;
 
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpConfig;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.configs.TeleOpConfig;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;

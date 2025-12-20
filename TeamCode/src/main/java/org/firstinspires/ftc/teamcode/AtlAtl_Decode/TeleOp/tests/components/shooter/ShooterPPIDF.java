@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests.components.shooter;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;

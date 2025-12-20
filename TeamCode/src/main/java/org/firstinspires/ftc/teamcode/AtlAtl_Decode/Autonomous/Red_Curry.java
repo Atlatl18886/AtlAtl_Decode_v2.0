@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpConfig;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
 
 @Autonomous(name="Red Curry", group="V2")
 public class Red_Curry extends LinearOpMode {

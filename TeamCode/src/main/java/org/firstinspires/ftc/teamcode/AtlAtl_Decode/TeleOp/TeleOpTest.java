@@ -4,6 +4,9 @@ import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.ShooterConfig;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.Toggle;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -28,6 +31,8 @@ public class TeleOpTest extends OpMode {
     private List<LynxModule> allHubs;
     private double savedHeading = 0;
     private boolean isAligning = false;
+
+    Toggle intakeToggle = new Toggle();
 
     private static final double CLOSE = ShooterConfig.CLOSE_TPS;
     private static final double MID = ShooterConfig.MID_TPS;
@@ -386,20 +391,17 @@ public class TeleOpTest extends OpMode {
     }
 
     //NON DT FUNCTIONALITIES
-    private boolean intakeActive = false;
-    private boolean intakePrev = false;
-    public void Intake() {
-        boolean bumperPressed = gamepad2.left_trigger > 0.1;
-        if (bumperPressed && !intakePrev) intakeActive = !intakeActive;
 
-        intakePrev = bumperPressed;
-        double mainIntakePower = intakeActive ? 1.0 : 0.0;
-        intake.setPower(mainIntakePower);
+    public void Intake() {
+        boolean intakeActive = intakeToggle.updateTrigger(gamepad2.left_trigger, 0.1);
+
+        intake.setPower(intakeActive ? 1.0 : 0.0);
 
         final double min = 0.5;
-        final double max = 1;
+        final double max = 1.0;
         antiroller.setPower(intakeActive ? max : min);
     }
+
     public void Transfer() {
         double p;
 

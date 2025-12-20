@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config;
 
 import com.acmerobotics.dashboard.config.Config;
 
