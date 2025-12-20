@@ -12,7 +12,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.List;
 
-@TeleOp
+@SuppressWarnings("unchecked")
+@TeleOp(name="V2.5 TeleOp", group="Main")
 public class TeleOpTest extends OpMode {
     public enum DrivePreset {
         LERP, QUADRATIC, CUBIC_BLEND, EXPONENTIAL, TANH, LINEAR, ADAPTIVE
@@ -20,6 +21,7 @@ public class TeleOpTest extends OpMode {
 
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
     private DcMotorEx intake, transfer, shooter;
+    private DcMotorEx antiroller;
     public IMU imu;
 
     //bulk reads
@@ -27,10 +29,10 @@ public class TeleOpTest extends OpMode {
     private double savedHeading = 0;
     private boolean isAligning = false;
 
-    private final double CLOSE = ShooterConfig.CLOSE_TPS;
-    private final double MID = ShooterConfig.MID_TPS;
-    private final double FAR = ShooterConfig.FAR_TPS;
-    private final double DEFAULT = ShooterConfig.DEFAULT_TPS;
+    private static final double CLOSE = ShooterConfig.CLOSE_TPS;
+    private static final double MID = ShooterConfig.MID_TPS;
+    private static final double FAR = ShooterConfig.FAR_TPS;
+    private static final double DEFAULT = ShooterConfig.DEFAULT_TPS;
     private final double SHOOTER_kP = ShooterConfig.shooter_Kp;
     private final double SHOOTER_kI = ShooterConfig.shooter_Ki;
     private final double SHOOTER_kD = ShooterConfig.shooter_Kd;
@@ -41,15 +43,16 @@ public class TeleOpTest extends OpMode {
     private final ElapsedTime pdTimer = new ElapsedTime();
 
     //jerk(slew) rate limiters
-    private SlewRateLimiter strafeLimiter = new SlewRateLimiter(7.5);
-    private SlewRateLimiter verticalLimiter = new SlewRateLimiter(7.5);
-    private SlewRateLimiter turnLimiter = new SlewRateLimiter(7.5);
+    private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(7.5);
+    private final SlewRateLimiter verticalLimiter = new SlewRateLimiter(7.5);
+    private final SlewRateLimiter turnLimiter = new SlewRateLimiter(7.5);
 
     //adaptive curve parameters
-    private final double GAMMA_MAX = 5.5;//high finesse at low speeds
-    private final double GAMMA_MIN = 0.5;// high response at high speeds
-    private final int transStart = 300;// tps where transition begins
-    private final int transEnd = 2250; // tps where transition completes
+    private static final double gammaMax = 5.5;//high finesse at low speeds
+    private static final double gammaMin = 0.5;// high response at high speeds
+    private static final int transStart = 300;// tps where transition begins
+    private static final int transEnd = 2250; // tps where transition completes
+
 
     //dt vel computation state
     private int prevLF = 0, prevRF = 0, prevLB = 0, prevRB = 0;
@@ -61,6 +64,7 @@ public class TeleOpTest extends OpMode {
         allHubs = hardwareMap.getAll(LynxModule.class);
         for (LynxModule module : allHubs) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
+            module.clearBulkCache();
         }
 
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
@@ -99,17 +103,22 @@ public class TeleOpTest extends OpMode {
         pdTimer.reset();
 
         intake = hardwareMap.get(DcMotorEx.class, "intake");
-        intake.setDirection(DcMotorEx.Direction.FORWARD);
+        intake.setDirection(DcMotorSimple.Direction.FORWARD);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        antiroller = hardwareMap.get(DcMotorEx.class, "antiroller");
+        antiroller.setDirection(DcMotorSimple.Direction.REVERSE);
+        antiroller.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
-        transfer.setDirection(DcMotorEx.Direction.REVERSE);
+        transfer.setDirection(DcMotorSimple.Direction.REVERSE);
         transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
-        shooter.setDirection(DcMotorEx.Direction.REVERSE);
+        shooter.setDirection(DcMotorSimple.Direction.FORWARD);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
+        telemetry.addData("init done", "");
     }
 
     @Override
@@ -132,7 +141,7 @@ public class TeleOpTest extends OpMode {
             savedHeading = currentHeading;
         }
         if (gamepad1.x) {
-            resetDriveLimiters();
+            resetLimiters();
 
             double error = savedHeading - currentHeading;
 
@@ -156,8 +165,6 @@ public class TeleOpTest extends OpMode {
             double kD = TeleOpConfig.imu_kD;
             double turnPower = (error * kP) + (derivative * kD);
 
-            turnPower *= TeleOpConfig.imu_turn_factor;
-
             if (turnPower > 0.5) turnPower = 0.5;
             if (turnPower < -0.5) turnPower = -0.5;
 
@@ -167,7 +174,7 @@ public class TeleOpTest extends OpMode {
                 rightFront.setPower(-turnPower);
                 rightBack.setPower(-turnPower);
             } else {
-                StopDrive();
+                stopDrive();
             }
 
             telemetry.addData("IMU Status", "ALIGNING");
@@ -182,55 +189,37 @@ public class TeleOpTest extends OpMode {
         telemetry.addData("Loop Rate", "%.0f Hz", 1.0/loopDt);
         telemetry.update();
     }
-    private void StopDrive() {
+    private void stopDrive() {
         leftFront.setPower(0); rightFront.setPower(0);
         leftBack.setPower(0); rightBack.setPower(0);
     }
-    private void resetDriveLimiters() {
+    private void resetLimiters() {
         strafeLimiter.reset();
         verticalLimiter.reset();
         turnLimiter.reset();
     }
     private void updVelocity(double dt) {
-        if (dt < 1e-6) return; //prevent divide by 0
-
-        int currLF = leftFront.getCurrentPosition();
-        int currRF = rightFront.getCurrentPosition();
-        int currLB = leftBack.getCurrentPosition();
-        int currRB = rightBack.getCurrentPosition();
-        int deltaLF = currLF - prevLF;
-        int deltaRF = currRF - prevRF;
-        int deltaLB = currLB - prevLB;
-        int deltaRB = currRB - prevRB;
-
-        //upd prev poses
-        prevLF = currLF;
-        prevRF = currRF;
-        prevLB = currLB;
-        prevRB = currRB;
-
         //calc instant velocities (ticks/sec)
-        double vLF = Math.abs(deltaLF / dt);
-        double vRF = Math.abs(deltaRF / dt);
-        double vLB = Math.abs(deltaLB / dt);
-        double vRB = Math.abs(deltaRB / dt);
-        double instantSpeed = Math.sqrt((vLF*vLF + vRF*vRF + vLB*vLB + vRB*vRB) / 4.0);
-
-        //smoothing to reduce noise from encoder
+        double vLF = Math.abs(leftFront.getVelocity());
+        double vRF = Math.abs(rightFront.getVelocity());
+        double vLB = Math.abs(leftBack.getVelocity());
+        double vRB = Math.abs(rightBack.getVelocity());
+        double instantSpeed = (vLF + vRF + vLB + vRB) / 4.0;
+        //apply exponential smoothing (low-pass filter)
         robotSpeed = (velSmooth * robotSpeed) + ((1.0 - velSmooth) * instantSpeed);
     }
 
     //linear interpolates between shaping gamma based on measured velociy
-    private double computeAdaptiveGamma() {
+    private double adaptiveGamma() {
         if (robotSpeed <= transStart) {
-            return GAMMA_MAX;
+            return gammaMax;
         } else if (robotSpeed >= transEnd) {
-            return GAMMA_MIN;
+            return gammaMin;
         } else {
-            // Linear interpolation
+            //linear interpolation
             double t = (robotSpeed - transStart) /
                     (transEnd - transStart);
-            return GAMMA_MAX + (GAMMA_MIN - GAMMA_MAX) * t;
+            return gammaMax + (gammaMin - gammaMax) * t;
         }
     }
     public void Drive(String presetString, double deadzone, double dt) {
@@ -248,7 +237,7 @@ public class TeleOpTest extends OpMode {
         double strafe, vertical, heading;
 
         if (preset == DrivePreset.ADAPTIVE) {
-            double gamma = computeAdaptiveGamma();
+            double gamma = adaptiveGamma();
 
             //apply velocity-based power-law shaping
             strafe = applyAdaptiveShaping(rStrafe, gamma);
@@ -269,7 +258,7 @@ public class TeleOpTest extends OpMode {
         vertical = suppressed[1];
         heading = suppressed[2];
 
-        if (gamepad1.right_bumper) {
+        if (gamepad1.left_bumper) {
             heading *= TeleOpConfig.AIM_TURN_SCALE;
             vertical *= TeleOpConfig.AIM_TURN_SCALE;
         }
@@ -344,7 +333,7 @@ public class TeleOpTest extends OpMode {
             case QUADRATIC:
                 return input * Math.abs(input);
             case CUBIC_BLEND:
-                double w = TeleOpConfig.CUBIC_BLEND_WEIGHT;
+                double w = TeleOpConfig.CUBIC_WEIGHT;
                 return (input * (1.0 - w)) + (Math.pow(input, 3) * w);
             case EXPONENTIAL:
                 return Math.pow(input, 3);
@@ -362,87 +351,70 @@ public class TeleOpTest extends OpMode {
         return Math.signum(input) * (Math.abs(input) - deadzone) / (1.0 - deadzone);
     }
     public static class SlewRateLimiter {
-        private double val = 0;
-        private final double rateLimit;
+        private double velocity = 0.0;      // filtered output
+        private double acceleration = 0.0;  // internal state
 
-        public SlewRateLimiter(double rateLimit) {
-            this.rateLimit = rateLimit;
+        private final double maxVel;     // power units per second
+        private final double maxAccel;   // power units per second^2
+
+        public SlewRateLimiter(double maxVel) {
+            this.maxVel = maxVel;
+            this.maxAccel = maxVel * 4.0; // implicit jerk control, minimal config
         }
         public double calculate(double target, double dt) {
-            double maxChange = rateLimit * dt;
-            double change = target - val;
+            if (dt < 1e-6) return velocity;
+            double desiredAccel = (target - velocity) / dt;
+            double accelDelta = desiredAccel - acceleration;
+            double maxAccelChange = maxAccel * dt;
 
-            if (change > maxChange) change = maxChange;
-            else if (change < -maxChange) change = -maxChange;
+            if (accelDelta > maxAccelChange) accelDelta = maxAccelChange;
+            else if (accelDelta < -maxAccelChange) accelDelta = -maxAccelChange;
 
-            val += change;
-            return val;
+            acceleration += accelDelta;
+            velocity += acceleration * dt;
+
+            //safety clamp
+            if (velocity > maxVel) velocity = maxVel;
+            else if (velocity < -maxVel) velocity = -maxVel;
+
+            return velocity;
         }
         public void reset() {
-            val = 0.0;
+            velocity = 0.0;
+            acceleration = 0.0;
         }
     }
 
     //NON DT FUNCTIONALITIES
     private boolean intakeActive = false;
     private boolean intakePrev = false;
-
     public void Intake() {
-        boolean bumperPressed = gamepad2.left_bumper;
+        boolean bumperPressed = gamepad2.left_trigger > 0.1;
         if (bumperPressed && !intakePrev) intakeActive = !intakeActive;
 
-        double power = intakeActive ? 1.0 : 0.0;
-        intake.setPower(power);
         intakePrev = bumperPressed;
+        double mainIntakePower = intakeActive ? 1.0 : 0.0;
+        intake.setPower(mainIntakePower);
+
+        final double min = 0.5;
+        final double max = 1;
+        antiroller.setPower(intakeActive ? max : min);
     }
-
-    private boolean transferStopped = false;
-    private boolean transferPrev = false;
-    private double transferFreeVel = 0.0;
-    private double learn_alfa = TeleOpConfig.learn_alfa;
-    private double slipGain = TeleOpConfig.slipGain;
-    private double minTransfer = TeleOpConfig.min_transfer;
-
     public void Transfer() {
-        boolean togglePressed = gamepad2.right_trigger > 0.1;
-        if (togglePressed && !transferPrev) {
-            transferStopped = !transferStopped;
+        double p;
+
+        if (gamepad2.right_trigger > 0.1) {
+            p = 1.0;
         }
-        transferPrev = togglePressed;
-
-        double basePower;
-        if (gamepad2.left_trigger > 0.1) {
-            basePower = 1.0;
-        } else if (transferStopped) {
-            basePower = 0.0;
-        } else {
-            basePower = -0.75;
+        else {
+            p = -0.5;
         }
-
-        if (basePower == 0.0) {
-            transfer.setPower(0.0);
-            return;
-        }
-
-        double vel = Math.abs(transfer.getVelocity());
-        if (vel > transferFreeVel) {
-            transferFreeVel += (vel - transferFreeVel) * learn_alfa;
-        }
-
-        double slip = 1.0 - (vel / Math.max(transferFreeVel, 1.0));
-        slip = Math.max(0.0, Math.min(1.0, slip));
-
-        double scaledPower = basePower * (1.0 - slip * slipGain);
-        if (Math.abs(scaledPower) < minTransfer) {
-            scaledPower = Math.signum(scaledPower) * minTransfer;
-        }
-
-        transfer.setPower(scaledPower);
+        transfer.setPower(p);
     }
-
     private double targetVel = 0;
     public void Shooter() {
-        if (gamepad2.right_bumper) {
+        /*
+        if (gamepad2.a) {
             targetVel = CLOSE;
         } else if (gamepad2.b) {
             targetVel = MID;
@@ -450,7 +422,13 @@ public class TeleOpTest extends OpMode {
             targetVel = FAR;
         } else {
             targetVel = DEFAULT;
-        }
+        }*/
+        double CLOSE = ShooterConfig.CLOSE_TPS;
+        double MID = ShooterConfig.MID_TPS;
+        double FAR = ShooterConfig.FAR_TPS;
+        double DEFAULT = ShooterConfig.DEFAULT_TPS;
+        targetVel = DEFAULT;
+
         shooter.setVelocity(targetVel);
 
         telemetry.addData("Shooter Vel", "%.0f", Math.abs(shooter.getVelocity()));

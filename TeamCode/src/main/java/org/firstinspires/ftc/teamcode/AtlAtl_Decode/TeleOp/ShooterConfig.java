@@ -7,11 +7,12 @@ public class ShooterConfig {
     public static double MID_TPS = 800;
     public static double CLOSE_TPS = 260;
     public static double FAR_TPS = 1400;
-    public static double DEFAULT_TPS = 180;
+    public static double DEFAULT_TPS = 0;
 
+    // TODO: TUNE
     public static double shooter_Kf = 0.00037; // 1.0/rough max tps
     public static double shooter_Kp = 0.00075;  // Adjust if reaction is too slow
-    public static double shooter_Ki = 0.001;
+    public static double shooter_Ki = 0;
     public static double shooter_Kd = 0.0;
 }
 

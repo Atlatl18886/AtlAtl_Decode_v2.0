@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 
@@ -26,7 +27,8 @@ Right Trigger - Transfer
 Right bumper - aim mode for turning
 */
 
-@TeleOp
+@TeleOp(name="LM3 V2 TeleOp", group="Main")
+@Disabled
 public class V2_TeleOp extends OpMode {
     private DcMotorEx leftFront;
     private DcMotorEx rightFront;
@@ -122,7 +124,6 @@ public class V2_TeleOp extends OpMode {
             double kD = TeleOpConfig.imu_kD;
             double turnPower = (error * kP) + (derivative * kD);
 
-            turnPower *= TeleOpConfig.imu_turn_factor;
             if (turnPower > 0.5) turnPower = 0.5;
             if (turnPower < -0.5) turnPower = -0.5;
 
