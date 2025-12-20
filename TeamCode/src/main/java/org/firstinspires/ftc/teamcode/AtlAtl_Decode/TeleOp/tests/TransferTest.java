@@ -1,11 +1,11 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests;
+/*package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests;
 
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpConfig;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-@TeleOp
+@TeleOp(name="Transfer Test", group="tests")
 public class TransferTest extends OpMode {
     private DcMotorEx transfer;
 
@@ -68,3 +68,5 @@ public class TransferTest extends OpMode {
     }
 
 }
+
+ */
