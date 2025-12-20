@@ -31,12 +31,18 @@ repositories {
     maven {
         url = "https://repo.dairy.foundation/releases"
     }
+    maven {
+        url = "https://jitpack.io"
+    }
 }
 
 dependencies {
     implementation project(':FtcRobotController')
     implementation('com.acmerobotics.roadrunner:core:1.0.1')
     implementation('com.acmerobotics.roadrunner:actions:1.0.1') {
+        exclude group: 'com.acmerobotics.dashboard'
+    }
+    implementation('com.acmerobotics.roadrunner:ftc:0.1.25') {
         exclude group: 'com.acmerobotics.dashboard'
     }
     implementation('dev.frozenmilk.sinister:Sloth:0.2.4')
