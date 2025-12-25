@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests.components.sho
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -11,7 +12,8 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
-@TeleOp(name="PIDF Shooter AutoTune (Fast KpKd)", group="tests")
+@TeleOp(name="Shooter AutoTuner", group="tests")
+@Disabled
 public class ShooterSST extends LinearOpMode {
 
     private DcMotorEx shooter;

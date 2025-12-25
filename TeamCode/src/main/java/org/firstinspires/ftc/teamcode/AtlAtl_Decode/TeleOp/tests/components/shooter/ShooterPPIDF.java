@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests.components.sho
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -13,7 +14,8 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @Config
-@TeleOp(name="Shooter Tuning", group="tests")
+@TeleOp(name="Shooter Tuning Manual", group="tests")
+@Disabled
 public class ShooterPPIDF extends OpMode {
     private DcMotorEx shooter;
     private Telemetry dashboardTelemetry;

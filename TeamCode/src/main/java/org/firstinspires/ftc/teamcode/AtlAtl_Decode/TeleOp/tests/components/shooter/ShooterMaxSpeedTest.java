@@ -11,19 +11,14 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.util.Conversions;
 
 @Config
-@TeleOp(name="Shooter integrated tuning", group="tests")
-public class ShooterTest extends OpMode {
+@TeleOp(name="Shooter MAX SPEED", group="tests")
+public class ShooterMaxSpeedTest extends OpMode {
 
     private DcMotorEx shooter;
 
     double tpr = Conversions.TPR_6000_RPM;
-    public static double SHOOTER_kP = 580; //tuned 600, 1/2--300, tuned w/ kI + kD:580
-    public static double SHOOTER_kI = 8.8;
-    public static double SHOOTER_kD = 4;
-    public static double SHOOTER_kF = 47.85;
-    public static double targetRPM = 1000; //max 2k
 
-    private double targetVel = 0;
+    public static double targetPower = 1.0; //max 2k
     private double currentRPM = 0;
     private double currentVel = 0;
 
@@ -33,12 +28,8 @@ public class ShooterTest extends OpMode {
 
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setDirection(DcMotorSimple.Direction.FORWARD);
-        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
+        shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         telemetry.addData("Status", "Initialized");
-
-        targetVel = Conversions.rpmToTps(targetRPM, tpr);
     }
     @Override
     public void start() {
@@ -46,16 +37,13 @@ public class ShooterTest extends OpMode {
     }
     @Override
     public void loop() {
-        targetVel = Conversions.rpmToTps(targetRPM, tpr);
 
-        shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
         currentVel = shooter.getVelocity();
         currentRPM = Conversions.tpsToRpm(currentVel, tpr);
-        shooter.setVelocity(Conversions.rpmToTps(targetRPM, tpr));
-        telemetry.addData("[0] targetVel ticks", "%.0f", targetVel);
-        telemetry.addData("[1] currentVel ticks", "%.0f", Math.abs(currentVel));
-        telemetry.addData("[2] targetRPM", "%.0f", targetRPM);
-        telemetry.addData("[3] currentRPM", "%.0f", Math.abs(currentRPM));
+        shooter.setPower(targetPower);
+        telemetry.addData("[0] currentVel ticks", "%.0f", Math.abs(currentVel));
+        telemetry.addData("[1] targetRPM", "%.0f", targetPower);
+        telemetry.addData("[2] currentRPM", "%.0f", Math.abs(currentRPM));
     }
 
 }
