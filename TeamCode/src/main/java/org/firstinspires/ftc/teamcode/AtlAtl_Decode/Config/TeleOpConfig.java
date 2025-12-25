@@ -26,4 +26,10 @@ public class TeleOpConfig {
     public static final double min_transfer = 0.25;//dont completely stop
      */
 
+    //adaptive curve parameters
+    private static final double gammaMax = 5.5;//high finesse at low speeds
+    private static final double gammaMin = 0.5;// high response at high speeds
+    private static final int transStart = 300;// tps where transition begins
+    private static final int transEnd = 2250; // tps where transition completes
+
 }

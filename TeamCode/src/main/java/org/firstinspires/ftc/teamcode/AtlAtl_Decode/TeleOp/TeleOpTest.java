@@ -6,7 +6,16 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.ShooterConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.Toggle;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.control.Toggle;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.control.RobotModeFSM;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.AdaptiveGamma;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.HeadingController;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.SlewRateLimiter;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.InputProcessor;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.PrioritySuppression;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.TelemetryHelper;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.EventLogger;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.util.LoopProfiler;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -15,7 +24,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.List;
 
-@SuppressWarnings("unchecked")
 @TeleOp(name="V2.5 TeleOp", group="Main")
 public class TeleOpTest extends OpMode {
     public enum DrivePreset {
@@ -26,13 +34,10 @@ public class TeleOpTest extends OpMode {
     private DcMotorEx intake, transfer, shooter;
     private DcMotorEx antiroller;
     public IMU imu;
+    private double savedHeading = 0;
 
     //bulk reads
     private List<LynxModule> allHubs;
-    private double savedHeading = 0;
-    private boolean isAligning = false;
-
-    Toggle intakeToggle = new Toggle();
 
     private static final double CLOSE = ShooterConfig.CLOSE_TPS;
     private static final double MID = ShooterConfig.MID_TPS;
@@ -44,23 +49,33 @@ public class TeleOpTest extends OpMode {
     private final double SHOOTER_kF = ShooterConfig.shooter_Kf;
 
     private final ElapsedTime loopTimer = new ElapsedTime();
-    private double prevError = 0;
-    private final ElapsedTime pdTimer = new ElapsedTime();
 
     //jerk(slew) rate limiters
     private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(7.5);
     private final SlewRateLimiter verticalLimiter = new SlewRateLimiter(7.5);
     private final SlewRateLimiter turnLimiter = new SlewRateLimiter(7.5);
 
-    //adaptive curve parameters
-    private static final double gammaMax = 5.5;//high finesse at low speeds
-    private static final double gammaMin = 0.5;// high response at high speeds
-    private static final int transStart = 300;// tps where transition begins
-    private static final int transEnd = 2250; // tps where transition completes
+    private HeadingController headingController;
+    private AdaptiveGamma gammaHelper;
+    private PrioritySuppression suppressionHelper = new PrioritySuppression();
+    private InputProcessor inputProcessor;
+    Toggle intakeToggle = new Toggle();
+    private RobotModeFSM fsm;
+
+    // telemetry helpers
+    private TelemetryHelper driveT;
+    private TelemetryHelper intakeT;
+    private TelemetryHelper shooterT;
+    private TelemetryHelper debugT;
+    private TelemetryHelper loopT;
+    private TelemetryHelper eventsT;
+
+    // profiler&event logger
+    private LoopProfiler profiler = new LoopProfiler();
+    private EventLogger events = new EventLogger(12);
 
 
     //dt vel computation state
-    private int prevLF = 0, prevRF = 0, prevLB = 0, prevRB = 0;
     private double robotSpeed = 0.0;
     private final double velSmooth = 0.7;//expon smoothing factor
 
@@ -92,11 +107,6 @@ public class TeleOpTest extends OpMode {
         leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        prevLF = leftFront.getCurrentPosition();
-        prevRF = rightFront.getCurrentPosition();
-        prevLB = leftBack.getCurrentPosition();
-        prevRB = rightBack.getCurrentPosition();
-
         //imu init
         imu = hardwareMap.get(IMU.class, "imu");
         RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
@@ -105,7 +115,10 @@ public class TeleOpTest extends OpMode {
         imu.resetYaw();
 
         loopTimer.reset();
-        pdTimer.reset();
+        headingController = new HeadingController(TeleOpConfig.imu_kP, TeleOpConfig.imu_kD);
+        gammaHelper = new AdaptiveGamma(5.5, 0.5, 300, 2250);
+        inputProcessor = new InputProcessor(gammaHelper);
+        fsm = new RobotModeFSM(events);
 
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         intake.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -124,6 +137,18 @@ public class TeleOpTest extends OpMode {
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
         telemetry.addData("init done", "");
+
+        driveT = TelemetryHelper.create(telemetry, "Drive");
+        intakeT = TelemetryHelper.create(telemetry, "Intake");
+        shooterT = TelemetryHelper.create(telemetry, "Shooter");
+        debugT = TelemetryHelper.create(telemetry, "Debug");
+
+        loopT = debugT.child("Loop");
+        eventsT = debugT.child("Events");
+
+        profiler.start();
+        events.add("TeleOp init");
+
     }
 
     @Override
@@ -131,10 +156,17 @@ public class TeleOpTest extends OpMode {
         for (LynxModule module : allHubs) {
             module.clearBulkCache();
         }
+        double loopMs = profiler.update();
+        loopT.clear();
+        loopT.addf("loop", "%.2f", loopMs);
+        loopT.addf("avg", "%.2f", profiler.getAvg());
 
         double loopDt = loopTimer.seconds();
         loopTimer.reset();
-        updVelocity(loopDt);
+
+        fsm.update(gamepad1.x); // heading lock button
+
+        updVelocity();
         double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
         Intake();
@@ -144,66 +176,60 @@ public class TeleOpTest extends OpMode {
         // imu turntoheading
         if (gamepad1.dpad_up) {
             savedHeading = currentHeading;
+            events.add("Heading Saved :" + Math.round(savedHeading));
         }
-        if (gamepad1.x) {
-            resetLimiters();
 
-            double error = savedHeading - currentHeading;
+        switch (fsm.getMode()) {
+            case HEADING_LOCK:
+                runHeadingLock(currentHeading);
+                break;
 
-            while (error > 180) error -= 360;
-            while (error <= -180) error += 360;
+            case MANUAL:
+                headingController.reset(); // Reset PID when not in use
+                Drive(TeleOpConfig.DRIVE_PRESET, TeleOpConfig.DRIVE_DEADZONE, loopDt);
+                break;
 
-            if (!isAligning) {
-                pdTimer.reset();
-                prevError = error;
-                isAligning = true;
-            }
-
-            double pdDt = pdTimer.seconds();
-            pdTimer.reset();
-            if (pdDt < 1e-3) pdDt = 1e-3;
-
-            double derivative = (error - prevError) / pdDt;
-            prevError = error;
-
-            double kP = TeleOpConfig.imu_kP;
-            double kD = TeleOpConfig.imu_kD;
-            double turnPower = (error * kP) + (derivative * kD);
-
-            if (turnPower > 0.5) turnPower = 0.5;
-            if (turnPower < -0.5) turnPower = -0.5;
-
-            if (Math.abs(error) > 2.0) {
-                leftFront.setPower(turnPower);
-                leftBack.setPower(turnPower);
-                rightFront.setPower(-turnPower);
-                rightBack.setPower(-turnPower);
-            } else {
+            case DISABLED:
                 stopDrive();
-            }
-
-            telemetry.addData("IMU Status", "ALIGNING");
-            telemetry.addData("Target", savedHeading);
-            telemetry.addData("Err", error);
-        } else {
-            isAligning = false;
-            Drive(TeleOpConfig.DRIVE_PRESET, TeleOpConfig.DRIVE_DEADZONE, loopDt);
+                break;
         }
 
-        telemetry.addData("Heading", "%.1f", currentHeading);
-        telemetry.addData("Loop Rate", "%.0f Hz", 1.0/loopDt);
+        driveT.addf("heading", "%.1f", currentHeading);
+        driveT.addf("speed", "%.0f", robotSpeed);
+        events.pushTo(eventsT);
+        driveT.push();
+        intakeT.push();
+        shooterT.push();
+        debugT.push();
         telemetry.update();
     }
     private void stopDrive() {
         leftFront.setPower(0); rightFront.setPower(0);
         leftBack.setPower(0); rightBack.setPower(0);
     }
+    private void runHeadingLock(double currentHeading) {
+        resetLimiters();
+
+        double turnPower = headingController.compute(currentHeading, savedHeading);
+        turnPower = Math.max(-0.5, Math.min(0.5, turnPower));
+
+        if (Math.abs(savedHeading - currentHeading) > 2.0) {
+            leftFront.setPower(turnPower);
+            leftBack.setPower(turnPower);
+            rightFront.setPower(-turnPower);
+            rightBack.setPower(-turnPower);
+        } else {
+            stopDrive();
+        }
+
+        telemetry.addData("Status", "ALIGNING TO " + savedHeading);
+    }
     private void resetLimiters() {
         strafeLimiter.reset();
         verticalLimiter.reset();
         turnLimiter.reset();
     }
-    private void updVelocity(double dt) {
+    private void updVelocity() {
         //calc instant velocities (ticks/sec)
         double vLF = Math.abs(leftFront.getVelocity());
         double vRF = Math.abs(rightFront.getVelocity());
@@ -214,19 +240,6 @@ public class TeleOpTest extends OpMode {
         robotSpeed = (velSmooth * robotSpeed) + ((1.0 - velSmooth) * instantSpeed);
     }
 
-    //linear interpolates between shaping gamma based on measured velociy
-    private double adaptiveGamma() {
-        if (robotSpeed <= transStart) {
-            return gammaMax;
-        } else if (robotSpeed >= transEnd) {
-            return gammaMin;
-        } else {
-            //linear interpolation
-            double t = (robotSpeed - transStart) /
-                    (transEnd - transStart);
-            return gammaMax + (gammaMin - gammaMax) * t;
-        }
-    }
     public void Drive(String presetString, double deadzone, double dt) {
         DrivePreset preset;
         try {
@@ -235,30 +248,13 @@ public class TeleOpTest extends OpMode {
             preset = DrivePreset.LINEAR;
         }
 
-        double rStrafe = deadbandRemap(-gamepad1.left_stick_x, deadzone);
-        double rVertical = deadbandRemap(gamepad1.left_stick_y, deadzone);
-        double rHeading = deadbandRemap(-gamepad1.right_stick_x, deadzone);
-
-        double strafe, vertical, heading;
-
-        if (preset == DrivePreset.ADAPTIVE) {
-            double gamma = adaptiveGamma();
-
-            //apply velocity-based power-law shaping
-            strafe = applyAdaptiveShaping(rStrafe, gamma);
-            vertical = applyAdaptiveShaping(rVertical, gamma);
-            heading = applyAdaptiveShaping(rHeading, gamma);
-
-            telemetry.addData("Robot Speed", "%.0f tps", robotSpeed);
-            telemetry.addData("Gamma", "%.2f", gamma);
-        } else {
-            strafe = processInput(rStrafe, preset);
-            vertical = processInput(rVertical, preset);
-            heading = processInput(rHeading, preset);
-        }
+        double[] shaped = inputProcessor.process(gamepad1, preset, deadzone, robotSpeed);
+        double strafe = shaped[0];
+        double vertical = shaped[1];
+        double heading = shaped[2];
 
         //priority suppression
-        double[] suppressed = applySuppression(strafe, vertical, heading);
+        double[] suppressed = suppressionHelper.apply(strafe, vertical, heading);
         strafe = suppressed[0];
         vertical = suppressed[1];
         heading = suppressed[2];
@@ -292,148 +288,68 @@ public class TeleOpTest extends OpMode {
         rightBack.setPower(rightBackPower / max);
     }
 
-    /**
-    apply adaptive power shaping
-    formula -- output= sign(input) * |input|^gamma
-     range of gamma is 0.5 to 5.5
-    0.5 is sqrt response, agressive accel, 5.5 is aggressive dampeing, preciseness
-     **/
-    private double applyAdaptiveShaping(double input, double gamma) {
-        if (Math.abs(input) < 1e-6) return 0.0;
-        return Math.signum(input) * Math.pow(Math.abs(input), gamma);
-    }
-
-    //priority supression- ratio based
-    private double[] applySuppression(double strafe, double vertical, double heading) {
-        double absS = Math.abs(strafe);
-        double absV = Math.abs(vertical);
-        double absH = Math.abs(heading);
-
-        double eps = 1e-6;
-        double translationMag = Math.hypot(strafe, vertical);
-
-        if (translationMag > 0.15) {
-            double rotRatio = absH / (absH + translationMag + eps);
-            rotRatio = Math.max(rotRatio, 0.4);
-            heading *= rotRatio;
-        }
-
-        if (absV > absS) {
-            double ratio = absS / (absV + eps);
-            ratio = Math.max(ratio, 0.35);
-            strafe *= ratio;
-        } else {
-            double ratio = absV / (absS + eps);
-            ratio = Math.max(ratio, 0.35);
-            vertical *= ratio;
-        }
-        if (absV < 0.3 && absS > absV) {
-            vertical *= 0.5;
-        }
-
-        return new double[]{strafe, vertical, heading};
-    }
-    private double processInput(double input, DrivePreset preset) {
-        switch (preset) {
-            case QUADRATIC:
-                return input * Math.abs(input);
-            case CUBIC_BLEND:
-                double w = TeleOpConfig.CUBIC_WEIGHT;
-                return (input * (1.0 - w)) + (Math.pow(input, 3) * w);
-            case EXPONENTIAL:
-                return Math.pow(input, 3);
-            case TANH:
-                final double a = TeleOpConfig.TANH_A;
-                return Math.tanh(a * input) / Math.tanh(a);
-            case LERP:
-            case LINEAR:
-            default:
-                return input;
-        }
-    }
-    private double deadbandRemap(double input, double deadzone) {
-        if (Math.abs(input) < deadzone) return 0.0;
-        return Math.signum(input) * (Math.abs(input) - deadzone) / (1.0 - deadzone);
-    }
-    public static class SlewRateLimiter {
-        private double velocity = 0.0;      // filtered output
-        private double acceleration = 0.0;  // internal state
-
-        private final double maxVel;     // power units per second
-        private final double maxAccel;   // power units per second^2
-
-        public SlewRateLimiter(double maxVel) {
-            this.maxVel = maxVel;
-            this.maxAccel = maxVel * 4.0; // implicit jerk control, minimal config
-        }
-        public double calculate(double target, double dt) {
-            if (dt < 1e-6) return velocity;
-            double desiredAccel = (target - velocity) / dt;
-            double accelDelta = desiredAccel - acceleration;
-            double maxAccelChange = maxAccel * dt;
-
-            if (accelDelta > maxAccelChange) accelDelta = maxAccelChange;
-            else if (accelDelta < -maxAccelChange) accelDelta = -maxAccelChange;
-
-            acceleration += accelDelta;
-            velocity += acceleration * dt;
-
-            //safety clamp
-            if (velocity > maxVel) velocity = maxVel;
-            else if (velocity < -maxVel) velocity = -maxVel;
-
-            return velocity;
-        }
-        public void reset() {
-            velocity = 0.0;
-            acceleration = 0.0;
-        }
-    }
 
     //NON DT FUNCTIONALITIES
 
     public void Intake() {
+        boolean prevState = intakeToggle.get();
         boolean intakeActive = intakeToggle.updateTrigger(gamepad2.left_trigger, 0.1);
+
+        // log only on state transition
+        if (intakeActive != prevState) {
+            events.add(intakeActive ? "Intake toggled ON" : "Intake toggled OFF");
+        }
 
         intake.setPower(intakeActive ? 1.0 : 0.0);
 
         final double min = 0.5;
         final double max = 1.0;
         antiroller.setPower(intakeActive ? max : min);
+
+        intakeT.add("state", intakeActive);
+        intakeT.addf("power", "%.2f", intake.getPower());
     }
+
 
     public void Transfer() {
         double p;
 
         if (gamepad2.right_trigger > 0.1) {
-            p = 1.0;
+            p = 0.5;
         }
         else {
-            p = -0.5;
+            p = -1.0;
         }
         transfer.setPower(p);
+
     }
     private double targetVel = 0;
     public void Shooter() {
         /*
         if (gamepad2.a) {
             targetVel = CLOSE;
+            events.add("Shooter CLOSE");
         } else if (gamepad2.b) {
             targetVel = MID;
+            events.add("Shooter MID");
         } else if (gamepad2.y) {
             targetVel = FAR;
+            events.add("Shooter FAR");
         } else {
             targetVel = DEFAULT;
         }*/
-        double CLOSE = ShooterConfig.CLOSE_TPS;
-        double MID = ShooterConfig.MID_TPS;
-        double FAR = ShooterConfig.FAR_TPS;
-        double DEFAULT = ShooterConfig.DEFAULT_TPS;
         targetVel = DEFAULT;
-
         shooter.setVelocity(targetVel);
 
-        telemetry.addData("Shooter Vel", "%.0f", Math.abs(shooter.getVelocity()));
-        telemetry.addData("Target Vel", "%.0f", targetVel);
+        shooterT.addf("vel", "%.0f", Math.abs(shooter.getVelocity()));
+        shooterT.addf("target", "%.0f", targetVel);
+    }
+
+    @Override
+    public void stop() {
+        fsm.setDisabled();
+        stopDrive();
+        intake.setPower(0);
+        transfer.setPower(0);
     }
 }
