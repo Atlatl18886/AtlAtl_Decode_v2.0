@@ -23,7 +23,7 @@ public class LoopProfiler {
 
         return ms;
     }
-
+    public double getCount() { return count; }
     public double getAvg() { return avg; }
     public double getMin() { return min; }
     public double getMax() { return max; }

@@ -74,7 +74,7 @@ public class TeleOpTest extends OpMode {
     private LoopProfiler profiler = new LoopProfiler();
     private EventLogger events = new EventLogger(12);
 
-
+    private double voltageScale = 1.0;
     //dt vel computation state
     private double robotSpeed = 0.0;
     private final double velSmooth = 0.7;//expon smoothing factor
@@ -163,6 +163,11 @@ public class TeleOpTest extends OpMode {
 
         double loopDt = loopTimer.seconds();
         loopTimer.reset();
+
+        if (profiler.getCount() % 40 == 0) {
+            double currentVoltage = hardwareMap.voltageSensor.iterator().next().getVoltage();
+            voltageScale = 12.8 / currentVoltage;
+        }
 
         fsm.update(gamepad1.x); // heading lock button
 
@@ -282,10 +287,10 @@ public class TeleOpTest extends OpMode {
                 Math.max(Math.abs(leftBackPower), Math.abs(rightBackPower))
         ));
 
-        leftFront.setPower(leftFrontPower / max);
-        rightFront.setPower(rightFrontPower / max);
-        leftBack.setPower(leftBackPower / max);
-        rightBack.setPower(rightBackPower / max);
+        leftFront.setPower((leftFrontPower / max) * voltageScale);
+        rightFront.setPower((rightFrontPower / max) * voltageScale);
+        leftBack.setPower((leftBackPower / max) * voltageScale);
+        rightBack.setPower((rightBackPower / max) * voltageScale);
     }
 
 
@@ -303,22 +308,21 @@ public class TeleOpTest extends OpMode {
         intake.setPower(intakeActive ? 1.0 : 0.0);
 
         final double min = 0.5;
-        final double max = 1.0;
+        final double max = 0.9;
         antiroller.setPower(intakeActive ? max : min);
 
         intakeT.add("state", intakeActive);
         intakeT.addf("power", "%.2f", intake.getPower());
     }
 
-
     public void Transfer() {
         double p;
 
         if (gamepad2.right_trigger > 0.1) {
-            p = 0.5;
+            p = 0.8;
         }
         else {
-            p = -1.0;
+            p = -0.6;
         }
         transfer.setPower(p);
 

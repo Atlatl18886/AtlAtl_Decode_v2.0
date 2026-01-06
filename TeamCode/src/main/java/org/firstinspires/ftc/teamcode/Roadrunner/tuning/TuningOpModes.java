@@ -51,7 +51,6 @@ import org.firstinspires.ftc.teamcode.Roadrunner.TwoDeadWheelLocalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-@Disabled
 public final class TuningOpModes {
     // TODO: change this to TankDrive.class if you're using tank
     public static final Class<?> DRIVE_CLASS = MecanumDrive.class;
