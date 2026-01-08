@@ -63,12 +63,12 @@ public class TeleOpTest extends OpMode {
     private RobotModeFSM fsm;
 
     // telemetry helpers
-    private TelemetryHelper driveT;
-    private TelemetryHelper intakeT;
-    private TelemetryHelper shooterT;
-    private TelemetryHelper debugT;
-    private TelemetryHelper loopT;
-    private TelemetryHelper eventsT;
+    private TelemetryHelper driveTelem;
+    private TelemetryHelper intakeTelem;
+    private TelemetryHelper shooterTelem;
+    private TelemetryHelper debugTelem;
+    private TelemetryHelper loopTelem;
+    private TelemetryHelper eventsTelem;
 
     // profiler&event logger
     private LoopProfiler profiler = new LoopProfiler();
@@ -138,16 +138,16 @@ public class TeleOpTest extends OpMode {
         shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
         telemetry.addData("init done", "");
 
-        driveT = TelemetryHelper.create(telemetry, "Drive");
-        intakeT = TelemetryHelper.create(telemetry, "Intake");
-        shooterT = TelemetryHelper.create(telemetry, "Shooter");
-        debugT = TelemetryHelper.create(telemetry, "Debug");
+        driveTelem = TelemetryHelper.create(telemetry, "Drive");
+        intakeTelem = TelemetryHelper.create(telemetry, "Intake");
+        shooterTelem = TelemetryHelper.create(telemetry, "Shooter");
+        debugTelem = TelemetryHelper.create(telemetry, "Debug");
 
-        loopT = debugT.child("Loop");
-        eventsT = debugT.child("Events");
+        loopTelem = debugTelem.child("Loop");
+        eventsTelem = debugTelem.child("Events");
 
         profiler.start();
-        events.add("TeleOp init");
+        events.add("init done");
 
     }
 
@@ -157,9 +157,9 @@ public class TeleOpTest extends OpMode {
             module.clearBulkCache();
         }
         double loopMs = profiler.update();
-        loopT.clear();
-        loopT.addf("loop", "%.2f", loopMs);
-        loopT.addf("avg", "%.2f", profiler.getAvg());
+        loopTelem.clear();
+        loopTelem.addf("loop", "%.2f", loopMs);
+        loopTelem.addf("avg", "%.2f", profiler.getAvg());
 
         double loopDt = loopTimer.seconds();
         loopTimer.reset();
@@ -199,13 +199,13 @@ public class TeleOpTest extends OpMode {
                 break;
         }
 
-        driveT.addf("heading", "%.1f", currentHeading);
-        driveT.addf("speed", "%.0f", robotSpeed);
-        events.pushTo(eventsT);
-        driveT.push();
-        intakeT.push();
-        shooterT.push();
-        debugT.push();
+        driveTelem.addf("heading", "%.1f", currentHeading);
+        driveTelem.addf("speed", "%.0f", robotSpeed);
+        events.pushTo(eventsTelem);
+        driveTelem.push();
+        intakeTelem.push();
+        shooterTelem.push();
+        debugTelem.push();
         telemetry.update();
     }
     private void stopDrive() {
@@ -305,14 +305,14 @@ public class TeleOpTest extends OpMode {
             events.add(intakeActive ? "Intake toggled ON" : "Intake toggled OFF");
         }
 
-        intake.setPower(intakeActive ? 1.0 : 0.0);
+        intake.setPower(intakeActive ? 1.0 : 0.35);
 
         final double min = 0.5;
-        final double max = 0.9;
+        final double max = 0.5;
         antiroller.setPower(intakeActive ? max : min);
 
-        intakeT.add("state", intakeActive);
-        intakeT.addf("power", "%.2f", intake.getPower());
+        intakeTelem.add("state", intakeActive);
+        intakeTelem.addf("power", "%.2f", intake.getPower());
     }
 
     public void Transfer() {
@@ -322,7 +322,7 @@ public class TeleOpTest extends OpMode {
             p = 0.8;
         }
         else {
-            p = -0.6;
+            p = -0.5;
         }
         transfer.setPower(p);
 
@@ -345,8 +345,8 @@ public class TeleOpTest extends OpMode {
         targetVel = DEFAULT;
         shooter.setVelocity(targetVel);
 
-        shooterT.addf("vel", "%.0f", Math.abs(shooter.getVelocity()));
-        shooterT.addf("target", "%.0f", targetVel);
+        shooterTelem.addf("vel", "%.0f", Math.abs(shooter.getVelocity()));
+        shooterTelem.addf("target", "%.0f", targetVel);
     }
 
     @Override
