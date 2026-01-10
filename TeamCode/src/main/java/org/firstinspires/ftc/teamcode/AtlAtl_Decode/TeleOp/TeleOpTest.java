@@ -305,9 +305,9 @@ public class TeleOpTest extends OpMode {
             events.add(intakeActive ? "Intake toggled ON" : "Intake toggled OFF");
         }
 
-        intake.setPower(intakeActive ? 1.0 : 0); //0.35
+        intake.setPower(intakeActive ? 1.0 : 0.35); //0.35
 
-        final double min = 0; //0.5
+        final double min = 0.5; //0.5
         final double max = 0.5;
         antiroller.setPower(intakeActive ? max : min);
 
@@ -322,7 +322,7 @@ public class TeleOpTest extends OpMode {
             p = 0.8;
         }
         else {
-            p = 0; //-0.5
+            p = -0.5; //-0.5
         }
         transfer.setPower(p);
 
