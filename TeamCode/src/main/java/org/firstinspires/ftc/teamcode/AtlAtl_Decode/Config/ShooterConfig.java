@@ -4,16 +4,16 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class ShooterConfig {
-    public static double MID_TPS = 800;
-    public static double CLOSE_TPS = 260;
+    public static double MID_TPS = 850;
+    public static double CLOSE_TPS = 400;
     public static double FAR_TPS = 1400;
     public static double DEFAULT_TPS = 0;
 
     // TODO: TUNE
-    public static double shooter_Kf = 0.00037; // 1.0/rough max tps
-    public static double shooter_Kp = 0.00075;  // Adjust if reaction is too slow
+    public static double shooter_Kf = 19.5; // 1.0/rough max tps
+    public static double shooter_Kp = 12;  // Adjust if reaction is too slow
     public static double shooter_Ki = 0;
-    public static double shooter_Kd = 0.0;
+    public static double shooter_Kd = 0.5;
 }
 
 /*

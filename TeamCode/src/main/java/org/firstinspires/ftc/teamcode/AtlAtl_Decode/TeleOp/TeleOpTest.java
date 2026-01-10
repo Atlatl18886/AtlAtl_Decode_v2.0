@@ -6,16 +6,16 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.ShooterConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.control.Toggle;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.control.RobotModeFSM;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.AdaptiveGamma;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.HeadingController;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.SlewRateLimiter;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.InputProcessor;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.drivetrain.PrioritySuppression;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.TelemetryHelper;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.EventLogger;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.helpers.util.LoopProfiler;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.Toggle;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.RobotModeFSM;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.AdaptiveGamma;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.HeadingController;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.SlewRateLimiter;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.InputProcessor;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.PrioritySuppression;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.TelemetryHelper;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.EventLogger;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.LoopProfiler;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -143,8 +143,8 @@ public class TeleOpTest extends OpMode {
         shooterTelem = TelemetryHelper.create(telemetry, "Shooter");
         debugTelem = TelemetryHelper.create(telemetry, "Debug");
 
-        loopTelem = debugTelem.child("Loop");
-        eventsTelem = debugTelem.child("Events");
+        loopTelem = debugTelem.child("--Loop");
+        eventsTelem = debugTelem.child("--Events");
 
         profiler.start();
         events.add("init done");
@@ -166,7 +166,7 @@ public class TeleOpTest extends OpMode {
 
         if (profiler.getCount() % 40 == 0) {
             double currentVoltage = hardwareMap.voltageSensor.iterator().next().getVoltage();
-            voltageScale = 12.8 / currentVoltage;
+            voltageScale = Math.round(13.3 / currentVoltage);
         }
 
         fsm.update(gamepad1.x); // heading lock button
@@ -305,9 +305,9 @@ public class TeleOpTest extends OpMode {
             events.add(intakeActive ? "Intake toggled ON" : "Intake toggled OFF");
         }
 
-        intake.setPower(intakeActive ? 1.0 : 0.35);
+        intake.setPower(intakeActive ? 1.0 : 0); //0.35
 
-        final double min = 0.5;
+        final double min = 0; //0.5
         final double max = 0.5;
         antiroller.setPower(intakeActive ? max : min);
 
@@ -322,14 +322,14 @@ public class TeleOpTest extends OpMode {
             p = 0.8;
         }
         else {
-            p = -0.5;
+            p = 0; //-0.5
         }
         transfer.setPower(p);
 
     }
     private double targetVel = 0;
     public void Shooter() {
-        /*
+
         if (gamepad2.a) {
             targetVel = CLOSE;
             events.add("Shooter CLOSE");
@@ -341,10 +341,8 @@ public class TeleOpTest extends OpMode {
             events.add("Shooter FAR");
         } else {
             targetVel = DEFAULT;
-        }*/
-        targetVel = DEFAULT;
-        shooter.setVelocity(targetVel);
-
+        }
+        shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
         shooterTelem.addf("vel", "%.0f", Math.abs(shooter.getVelocity()));
         shooterTelem.addf("target", "%.0f", targetVel);
     }
