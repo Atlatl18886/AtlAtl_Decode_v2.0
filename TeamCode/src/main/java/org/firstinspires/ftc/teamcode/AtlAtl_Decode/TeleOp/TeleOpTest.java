@@ -250,6 +250,7 @@ public class TeleOpTest extends OpMode {
         else { targetVel = DEFAULT; }
 
         shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
+        shooter.setVelocity(targetVel);
 
         shooterTelem.addf("vel", "%.0f", Math.abs(shooter.getVelocity()));
         shooterTelem.addf("target", "%.0f", targetVel);
