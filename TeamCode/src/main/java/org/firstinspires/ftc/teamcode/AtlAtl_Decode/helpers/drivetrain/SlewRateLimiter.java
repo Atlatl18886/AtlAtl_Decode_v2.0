@@ -1,33 +1,47 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain;
 
 public class SlewRateLimiter {
-    private double velocity = 0.0; // filtered output
-    private double acceleration = 0.0; // internal state
+    private double velocity = 0.0;
+    private double acceleration = 0.0;
 
-    private final double maxVel;
+    private final double maxOutput;
     private final double maxAccel;
+    private final double maxJerk;
 
-    public SlewRateLimiter(double maxVel) {
-        this.maxVel = maxVel;
-        this.maxAccel = maxVel * 4.0; //jerk control
+    public SlewRateLimiter(double rateFactor) {
+        this.maxOutput = 1.25;
+        this.maxAccel = rateFactor;
+        this.maxJerk = maxAccel * 12.0;
     }
 
     public double calculate(double target, double dt) {
         if (dt < 1e-6) return velocity;
 
-        double desiredAccel = (target - velocity) / dt;
-        double accelDelta = desiredAccel - acceleration;
-        double maxAccelChange = maxAccel * dt;
+        double error = target - velocity;
 
-        if (accelDelta > maxAccelChange) accelDelta = maxAccelChange;
-        else if (accelDelta < -maxAccelChange) accelDelta = -maxAccelChange;
+        //prop damping nears the joystick target, preventing the overshoot.
+        double Kp = 10.0;
+        double desiredAccel = error * Kp;
 
-        acceleration += accelDelta;
+        //clamp to max accel
+        if (desiredAccel > maxAccel) desiredAccel = maxAccel;
+        else if (desiredAccel < -maxAccel) desiredAccel = -maxAccel;
+
+        //jerk rate limiting
+        double accelError = desiredAccel - acceleration;
+        double maxAccelChange = maxJerk * dt;
+
+        if (accelError > maxAccelChange) accelError = maxAccelChange;
+        else if (accelError < -maxAccelChange) accelError = -maxAccelChange;
+
+        //update vars
+        acceleration += accelError;
         velocity += acceleration * dt;
 
-        // safety clamp
-        if (velocity > maxVel) velocity = maxVel;
-        else if (velocity < -maxVel) velocity = -maxVel;
+        if (target == 0 && Math.abs(velocity) < 0.01) {
+            velocity = 0;
+            acceleration = 0;
+        }
 
         return velocity;
     }

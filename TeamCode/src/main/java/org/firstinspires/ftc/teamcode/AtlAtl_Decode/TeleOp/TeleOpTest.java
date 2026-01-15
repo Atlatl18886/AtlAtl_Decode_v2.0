@@ -36,7 +36,6 @@ public class TeleOpTest extends OpMode {
     public IMU imu;
     private double savedHeading = 0;
 
-    //bulk reads
     private List<LynxModule> allHubs;
 
     private static final double CLOSE = ShooterConfig.CLOSE_TPS;
@@ -50,7 +49,6 @@ public class TeleOpTest extends OpMode {
 
     private final ElapsedTime loopTimer = new ElapsedTime();
 
-    //jerk(slew) rate limiters
     private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(7.5);
     private final SlewRateLimiter verticalLimiter = new SlewRateLimiter(7.5);
     private final SlewRateLimiter turnLimiter = new SlewRateLimiter(7.5);
@@ -62,22 +60,13 @@ public class TeleOpTest extends OpMode {
     Toggle intakeToggle = new Toggle();
     private RobotModeFSM fsm;
 
-    // telemetry helpers
-    private TelemetryHelper driveTelem;
-    private TelemetryHelper intakeTelem;
-    private TelemetryHelper shooterTelem;
-    private TelemetryHelper debugTelem;
-    private TelemetryHelper loopTelem;
-    private TelemetryHelper eventsTelem;
-
-    // profiler&event logger
+    private TelemetryHelper driveTelem, intakeTelem, shooterTelem, debugTelem, loopTelem, eventsTelem;
     private LoopProfiler profiler = new LoopProfiler();
     private EventLogger events = new EventLogger(12);
 
     private double voltageScale = 1.0;
-    //dt vel computation state
     private double robotSpeed = 0.0;
-    private final double velSmooth = 0.7;//expon smoothing factor
+    private final double velSmooth = 0.55;
 
     @Override
     public void init() {
@@ -107,11 +96,10 @@ public class TeleOpTest extends OpMode {
         leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        //imu init
         imu = hardwareMap.get(IMU.class, "imu");
-        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection usbDirection = RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
-        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(logoDirection, usbDirection)));
+        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD)));
         imu.resetYaw();
 
         loopTimer.reset();
@@ -121,41 +109,28 @@ public class TeleOpTest extends OpMode {
         fsm = new RobotModeFSM(events);
 
         intake = hardwareMap.get(DcMotorEx.class, "intake");
-        intake.setDirection(DcMotorSimple.Direction.FORWARD);
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         antiroller = hardwareMap.get(DcMotorEx.class, "antiroller");
-        antiroller.setDirection(DcMotorSimple.Direction.REVERSE);
-        antiroller.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
-        transfer.setDirection(DcMotorSimple.Direction.REVERSE);
-        transfer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
-        shooter.setDirection(DcMotorSimple.Direction.FORWARD);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
-        telemetry.addData("init done", "");
 
         driveTelem = TelemetryHelper.create(telemetry, "Drive");
         intakeTelem = TelemetryHelper.create(telemetry, "Intake");
         shooterTelem = TelemetryHelper.create(telemetry, "Shooter");
         debugTelem = TelemetryHelper.create(telemetry, "Debug");
-
         loopTelem = debugTelem.child("--Loop");
         eventsTelem = debugTelem.child("--Events");
 
         profiler.start();
         events.add("init done");
-
     }
 
     @Override
     public void loop() {
-        for (LynxModule module : allHubs) {
-            module.clearBulkCache();
-        }
+        for (LynxModule module : allHubs) { module.clearBulkCache(); }
+
+        //loop profiling
         double loopMs = profiler.update();
         loopTelem.clear();
         loopTelem.addf("loop", "%.2f", loopMs);
@@ -165,12 +140,10 @@ public class TeleOpTest extends OpMode {
         loopTimer.reset();
 
         if (profiler.getCount() % 40 == 0) {
-            double currentVoltage = hardwareMap.voltageSensor.iterator().next().getVoltage();
-            voltageScale = Math.round(13.3 / currentVoltage);
+            voltageScale = 12.8 / hardwareMap.voltageSensor.iterator().next().getVoltage();
         }
 
-        fsm.update(gamepad1.x); // heading lock button
-
+        fsm.update(gamepad1.x);
         updVelocity();
         double currentHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
@@ -178,88 +151,49 @@ public class TeleOpTest extends OpMode {
         Shooter();
         Transfer();
 
-        // imu turntoheading
         if (gamepad1.dpad_up) {
             savedHeading = currentHeading;
             events.add("Heading Saved :" + Math.round(savedHeading));
         }
 
-        switch (fsm.getMode()) {
-            case HEADING_LOCK:
-                runHeadingLock(currentHeading);
-                break;
-
-            case MANUAL:
-                headingController.reset(); // Reset PID when not in use
-                Drive(TeleOpConfig.DRIVE_PRESET, TeleOpConfig.DRIVE_DEADZONE, loopDt);
-                break;
-
-            case DISABLED:
-                stopDrive();
-                break;
+        if (fsm.getMode() == RobotModeFSM.RobotMode.DISABLED) {
+            stopDrive();
+        } else {
+            Drive(currentHeading, loopDt);
         }
 
         driveTelem.addf("heading", "%.1f", currentHeading);
         driveTelem.addf("speed", "%.0f", robotSpeed);
         events.pushTo(eventsTelem);
+
         driveTelem.push();
         intakeTelem.push();
         shooterTelem.push();
         debugTelem.push();
         telemetry.update();
     }
-    private void stopDrive() {
-        leftFront.setPower(0); rightFront.setPower(0);
-        leftBack.setPower(0); rightBack.setPower(0);
-    }
-    private void runHeadingLock(double currentHeading) {
-        resetLimiters();
 
-        double turnPower = headingController.compute(currentHeading, savedHeading);
-        turnPower = Math.max(-0.5, Math.min(0.5, turnPower));
-
-        if (Math.abs(savedHeading - currentHeading) > 2.0) {
-            leftFront.setPower(turnPower);
-            leftBack.setPower(turnPower);
-            rightFront.setPower(-turnPower);
-            rightBack.setPower(-turnPower);
-        } else {
-            stopDrive();
-        }
-
-        telemetry.addData("Status", "ALIGNING TO " + savedHeading);
-    }
-    private void resetLimiters() {
-        strafeLimiter.reset();
-        verticalLimiter.reset();
-        turnLimiter.reset();
-    }
-    private void updVelocity() {
-        //calc instant velocities (ticks/sec)
-        double vLF = Math.abs(leftFront.getVelocity());
-        double vRF = Math.abs(rightFront.getVelocity());
-        double vLB = Math.abs(leftBack.getVelocity());
-        double vRB = Math.abs(rightBack.getVelocity());
-        double instantSpeed = (vLF + vRF + vLB + vRB) / 4.0;
-        //apply exponential smoothing (low-pass filter)
-        robotSpeed = (velSmooth * robotSpeed) + ((1.0 - velSmooth) * instantSpeed);
-    }
-
-    public void Drive(String presetString, double deadzone, double dt) {
+    private void Drive(double currentHeading, double dt) {
         DrivePreset preset;
-        try {
-            preset = DrivePreset.valueOf(presetString);
-        } catch (IllegalArgumentException e) {
-            preset = DrivePreset.LINEAR;
-        }
+        try { preset = DrivePreset.valueOf(TeleOpConfig.DRIVE_PRESET); }
+        catch (Exception e) { preset = DrivePreset.LINEAR; }
 
-        double[] shaped = inputProcessor.process(gamepad1, preset, deadzone, robotSpeed);
+        double[] shaped = inputProcessor.process(gamepad1, preset, TeleOpConfig.DRIVE_DEADZONE, robotSpeed);
         double strafe = shaped[0];
         double vertical = shaped[1];
-        double heading = shaped[2];
+        double heading;
 
-        //priority suppression
-        double[] suppressed = suppressionHelper.apply(strafe, vertical, heading);
+        boolean isLocked = (fsm.getMode() == RobotModeFSM.RobotMode.HEADING_LOCK);
+        if (isLocked) {
+            heading = headingController.compute(currentHeading, savedHeading);
+            heading = Math.max(-0.7, Math.min(0.7, heading));
+            telemetry.addData("Status", "LOCKED TO " + savedHeading);
+        } else {
+            heading = shaped[2];
+            headingController.reset();
+        }
+
+        double[] suppressed = suppressionHelper.apply(strafe, vertical, heading, isLocked);
         strafe = suppressed[0];
         vertical = suppressed[1];
         heading = suppressed[2];
@@ -268,83 +202,69 @@ public class TeleOpTest extends OpMode {
             heading *= TeleOpConfig.AIM_TURN_SCALE;
             vertical *= TeleOpConfig.AIM_TURN_SCALE;
         }
-
         vertical *= TeleOpConfig.speedFactor;
         heading *= TeleOpConfig.speedFactor;
         strafe *= TeleOpConfig.speedFactor;
-        //slew rate limiting
+
         strafe = strafeLimiter.calculate(strafe, dt);
         vertical = verticalLimiter.calculate(vertical, dt);
         heading = turnLimiter.calculate(heading, dt);
 
-        double leftFrontPower = vertical + strafe + heading;
-        double rightFrontPower = vertical + strafe - heading;
-        double leftBackPower = vertical - strafe + heading;
-        double rightBackPower = vertical - strafe - heading;
+        double lf = vertical + strafe + heading;
+        double rf = vertical + strafe - heading;
+        double lb = vertical - strafe + heading;
+        double rb = vertical - strafe - heading;
 
-        double max = Math.max(1.0, Math.max(
-                Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower)),
-                Math.max(Math.abs(leftBackPower), Math.abs(rightBackPower))
-        ));
+        double max = Math.max(1.0, Math.max(Math.max(Math.abs(lf), Math.abs(rf)), Math.max(Math.abs(lb), Math.abs(rb))));
 
-        leftFront.setPower((leftFrontPower / max) * voltageScale);
-        rightFront.setPower((rightFrontPower / max) * voltageScale);
-        leftBack.setPower((leftBackPower / max) * voltageScale);
-        rightBack.setPower((rightBackPower / max) * voltageScale);
+        leftFront.setPower((lf / max) * voltageScale);
+        rightFront.setPower((rf / max) * voltageScale);
+        leftBack.setPower((lb / max) * voltageScale);
+        rightBack.setPower((rb / max) * voltageScale);
     }
-
-
-    //NON DT FUNCTIONALITIES
 
     public void Intake() {
         boolean prevState = intakeToggle.get();
         boolean intakeActive = intakeToggle.updateTrigger(gamepad2.left_trigger, 0.1);
 
-        // log only on state transition
         if (intakeActive != prevState) {
             events.add(intakeActive ? "Intake toggled ON" : "Intake toggled OFF");
         }
 
-        intake.setPower(intakeActive ? 1.0 : 0.35); //0.35
-
-        final double min = 0.5; //0.5
-        final double max = 0.5;
-        antiroller.setPower(intakeActive ? max : min);
+        intake.setPower(intakeActive ? 1.0 : 0.35);
+        antiroller.setPower(intakeActive ? 0.5 : 0.5);
 
         intakeTelem.add("state", intakeActive);
         intakeTelem.addf("power", "%.2f", intake.getPower());
     }
 
     public void Transfer() {
-        double p;
-
-        if (gamepad2.right_trigger > 0.1) {
-            p = 0.8;
-        }
-        else {
-            p = -0.5; //-0.5
-        }
-        transfer.setPower(p);
-
+        transfer.setPower(gamepad2.right_trigger > 0.1 ? 1.0 : -0.4);
     }
+
     private double targetVel = 0;
     public void Shooter() {
+        if (gamepad2.a) { targetVel = CLOSE; events.add("Shooter CLOSE"); }
+        else if (gamepad2.b) { targetVel = MID; events.add("Shooter MID"); }
+        else if (gamepad2.y) { targetVel = FAR; events.add("Shooter FAR"); }
+        else { targetVel = DEFAULT; }
 
-        if (gamepad2.a) {
-            targetVel = CLOSE;
-            events.add("Shooter CLOSE");
-        } else if (gamepad2.b) {
-            targetVel = MID;
-            events.add("Shooter MID");
-        } else if (gamepad2.y) {
-            targetVel = FAR;
-            events.add("Shooter FAR");
-        } else {
-            targetVel = DEFAULT;
-        }
         shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
+
         shooterTelem.addf("vel", "%.0f", Math.abs(shooter.getVelocity()));
         shooterTelem.addf("target", "%.0f", targetVel);
+    }
+
+    private void stopDrive() {
+        leftFront.setPower(0); rightFront.setPower(0);
+        leftBack.setPower(0); rightBack.setPower(0);
+        strafeLimiter.reset(); verticalLimiter.reset(); turnLimiter.reset();
+    }
+
+    private void updVelocity() {
+        double instantSpeed = (Math.abs(leftFront.getVelocity()) + Math.abs(rightFront.getVelocity()) +
+                Math.abs(leftBack.getVelocity()) + Math.abs(rightBack.getVelocity())) / 4.0;
+        robotSpeed = (velSmooth * robotSpeed) + ((1.0 - velSmooth) * instantSpeed);
     }
 
     @Override

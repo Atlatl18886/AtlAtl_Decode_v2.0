@@ -2,9 +2,7 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain;
 
 public class PrioritySuppression {
 
-     //applies ratio-based suppression between strafe, vertical, and heading.
-    //returns 3-elem array -- {strafe, vert, heading}
-    public double[] apply(double strafe, double vertical, double heading) {
+    public double[] apply(double strafe, double vertical, double heading, boolean isLocked) {
         double absS = Math.abs(strafe);
         double absV = Math.abs(vertical);
         double absH = Math.abs(heading);
@@ -12,14 +10,19 @@ public class PrioritySuppression {
         double eps = 1e-6;
         double translationMag = Math.hypot(strafe, vertical);
 
-        //rot suppression when translating
+        // rot supress
         if (translationMag > 0.15) {
             double rotRatio = absH / (absH + translationMag + eps);
-            rotRatio = Math.max(rotRatio, 0.4);
+
+            //in HEADING_LOCK==> heading more priority (0.7)
+            // in MANUAL==> keep 0.4 priority to favor smooth driving.
+            double minRotationPriority = isLocked ? 0.7 : 0.4;
+
+            rotRatio = Math.max(rotRatio, minRotationPriority);
             heading *= rotRatio;
         }
 
-        // strafe/vertical suppression
+        // vert/strafe suppress
         if (absV > absS) {
             double ratio = absS / (absV + eps);
             ratio = Math.max(ratio, 0.35);
@@ -30,7 +33,6 @@ public class PrioritySuppression {
             vertical *= ratio;
         }
 
-        //low vertical --> dampen vertical when strafe is high
         if (absV < 0.3 && absS > absV) {
             vertical *= 0.5;
         }
