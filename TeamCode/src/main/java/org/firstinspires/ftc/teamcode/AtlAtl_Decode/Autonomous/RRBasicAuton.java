@@ -14,13 +14,25 @@ import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
 public class RRBasicAuton extends LinearOpMode {
     @Override
     public void runOpMode() {
-        //Intake intake = new Intake();
+        Pose2d initialPose = new Pose2d(0, 0, 0);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
+        Intake intake = new Intake(hardwareMap);
 
         waitForStart();
         if (isStopRequested()) return;
 
-        //Action path = intake.intakeReverse();
+        Actions.runBlocking(
+                drive.actionBuilder(initialPose)
+                        // 1.intake on
+                        .stopAndAdd(intake.setPower(1.0))
 
-        //Action.runBlocking(path);
+                        // 2.forward 2 ft
+                        .lineToX(24)
+
+                        // 3.intake off
+                        .stopAndAdd(intake.setPower(0.0))
+
+                        .build()
+        );
     }
 }
