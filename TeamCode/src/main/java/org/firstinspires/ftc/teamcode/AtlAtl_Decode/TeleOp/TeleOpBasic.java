@@ -171,6 +171,9 @@ public class TeleOpBasic extends OpMode {
                 return input * Math.abs(input);
             case "EXPONENTIAL":
                 return Math.pow(input, 3);
+            case "TANH":
+                double a = TeleOpConfig.TANH_A;
+                return Math.tanh(a * input) / Math.tanh(a);
             case "LINEAR":
             default:
                 return input;
