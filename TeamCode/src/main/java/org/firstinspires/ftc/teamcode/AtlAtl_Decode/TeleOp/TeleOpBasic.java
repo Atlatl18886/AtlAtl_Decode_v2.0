@@ -48,8 +48,10 @@ public class TeleOpBasic extends OpMode {
         leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
         rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
 
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -104,18 +106,15 @@ public class TeleOpBasic extends OpMode {
         double x = gamepad1.left_stick_x;
         double rx = gamepad1.right_stick_x;
 
-        y = applyCurve(y);
-        x = applyCurve(x);
-        rx = applyCurve(rx);
-
         y *= TeleOpConfig.speedFactor;
         x *= TeleOpConfig.speedFactor;
         rx *= TeleOpConfig.speedFactor;
 
         double lf = y + x + rx;
         double lb = y - x + rx;
-        double rf = y - x - rx;
-        double rb = y + x - rx;
+        double rf = y + x - rx;
+        double rb = y - x - rx;
+
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
 
         leftFront.setPower((lf / denominator));
@@ -163,20 +162,4 @@ public class TeleOpBasic extends OpMode {
         shooterTelem.addf("Actual", "%.0f", shooter.getVelocity());
     }
 
-    private double applyCurve(double input) {
-        if (Math.abs(input) < TeleOpConfig.DRIVE_DEADZONE) return 0;
-
-        switch (TeleOpConfig.DRIVE_PRESET) {
-            case "QUADRATIC":
-                return input * Math.abs(input);
-            case "EXPONENTIAL":
-                return Math.pow(input, 3);
-            case "TANH":
-                double a = TeleOpConfig.TANH_A;
-                return Math.tanh(a * input) / Math.tanh(a);
-            case "LINEAR":
-            default:
-                return input;
-        }
-    }
 }

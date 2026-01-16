@@ -24,7 +24,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.List;
 
-@TeleOp(name="V2.5 TeleOp", group="Main")
+@TeleOp(name="V2.5 TeleOp?", group="Main")
 public class TeleOpTest extends OpMode {
     public enum DrivePreset {
         LERP, QUADRATIC, CUBIC_BLEND, EXPONENTIAL, TANH, LINEAR, ADAPTIVE, NORMAL
@@ -49,9 +49,9 @@ public class TeleOpTest extends OpMode {
 
     private final ElapsedTime loopTimer = new ElapsedTime();
 
-    private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(7.5);
-    private final SlewRateLimiter verticalLimiter = new SlewRateLimiter(7.5);
-    private final SlewRateLimiter turnLimiter = new SlewRateLimiter(7.5);
+    private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(3.5);
+    private final SlewRateLimiter verticalLimiter = new SlewRateLimiter(3.5);
+    private final SlewRateLimiter turnLimiter = new SlewRateLimiter(3.5);
 
     private HeadingController headingController;
     private AdaptiveGamma gammaHelper;
@@ -64,7 +64,6 @@ public class TeleOpTest extends OpMode {
     private LoopProfiler profiler = new LoopProfiler();
     private EventLogger events = new EventLogger(12);
 
-    private double voltageScale = 1.0;
     private double robotSpeed = 0.0;
     private final double velSmooth = 0.55;
 
@@ -81,10 +80,10 @@ public class TeleOpTest extends OpMode {
         leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
         rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
 
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
-        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -142,10 +141,6 @@ public class TeleOpTest extends OpMode {
 
         double loopDt = loopTimer.seconds();
         loopTimer.reset();
-
-        if (profiler.getCount() % 40 == 0) {
-            voltageScale = 12.8 / hardwareMap.voltageSensor.iterator().next().getVoltage();
-        }
 
         fsm.update(gamepad1.x);
         updVelocity();
@@ -223,17 +218,17 @@ public class TeleOpTest extends OpMode {
             turnLimiter.reset();
         }
 
-        double lf = vertical + strafe + heading;
+        double lf  = vertical + strafe + heading;
         double rf = vertical + strafe - heading;
-        double lb = vertical - strafe + heading;
-        double rb = vertical - strafe - heading;
+        double lb   = vertical - strafe + heading;
+        double rb  = vertical - strafe - heading;
 
         double max = Math.max(1.0, Math.max(Math.max(Math.abs(lf), Math.abs(rf)), Math.max(Math.abs(lb), Math.abs(rb))));
 
-        leftFront.setPower((lf / max) * voltageScale);
-        rightFront.setPower((rf / max) * voltageScale);
-        leftBack.setPower((lb / max) * voltageScale);
-        rightBack.setPower((rb / max) * voltageScale);
+        leftFront.setPower((lf / max));
+        rightFront.setPower((rf / max));
+        leftBack.setPower((lb / max));
+        rightBack.setPower((rb / max));
     }
 
     public void Intake() {
