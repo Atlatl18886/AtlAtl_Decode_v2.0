@@ -27,7 +27,7 @@ import java.util.List;
 @TeleOp(name="V2.5 TeleOp", group="Main")
 public class TeleOpTest extends OpMode {
     public enum DrivePreset {
-        LERP, QUADRATIC, CUBIC_BLEND, EXPONENTIAL, TANH, LINEAR, ADAPTIVE
+        LERP, QUADRATIC, CUBIC_BLEND, EXPONENTIAL, TANH, LINEAR, ADAPTIVE, NORMAL
     }
 
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
@@ -105,6 +105,10 @@ public class TeleOpTest extends OpMode {
         loopTimer.reset();
         headingController = new HeadingController(TeleOpConfig.imu_kP, TeleOpConfig.imu_kD);
         gammaHelper = new AdaptiveGamma(5.5, 0.5, 300, 2250);
+        //gammaMax: 5.5 - high finesse at low speeds
+        //gammaMin: 0.5 - high response at high speeds
+        //transStart: 300 - tps where transition begins
+        //transEnd: 2250 - tps where transition completes
         inputProcessor = new InputProcessor(gammaHelper);
         fsm = new RobotModeFSM(events);
 
@@ -187,16 +191,18 @@ public class TeleOpTest extends OpMode {
         if (isLocked) {
             heading = headingController.compute(currentHeading, savedHeading);
             heading = Math.max(-0.7, Math.min(0.7, heading));
-            telemetry.addData("Status", "LOCKED TO " + savedHeading);
         } else {
             heading = shaped[2];
             headingController.reset();
         }
 
-        double[] suppressed = suppressionHelper.apply(strafe, vertical, heading, isLocked);
-        strafe = suppressed[0];
-        vertical = suppressed[1];
-        heading = suppressed[2];
+        //priority supressing
+        if (TeleOpConfig.USE_PRIORITY_SUPPRESSION) {
+            double[] suppressed = suppressionHelper.apply(strafe, vertical, heading, isLocked);
+            strafe = suppressed[0];
+            vertical = suppressed[1];
+            heading = suppressed[2];
+        }
 
         if (gamepad1.left_bumper) {
             heading *= TeleOpConfig.AIM_TURN_SCALE;
@@ -206,9 +212,16 @@ public class TeleOpTest extends OpMode {
         heading *= TeleOpConfig.speedFactor;
         strafe *= TeleOpConfig.speedFactor;
 
-        strafe = strafeLimiter.calculate(strafe, dt);
-        vertical = verticalLimiter.calculate(vertical, dt);
-        heading = turnLimiter.calculate(heading, dt);
+        //conditional slew rate limiting
+        if (TeleOpConfig.USE_SLEW_LIMITING) {
+            strafe = strafeLimiter.calculate(strafe, dt);
+            vertical = verticalLimiter.calculate(vertical, dt);
+            heading = turnLimiter.calculate(heading, dt);
+        } else {
+            strafeLimiter.reset();
+            verticalLimiter.reset();
+            turnLimiter.reset();
+        }
 
         double lf = vertical + strafe + heading;
         double rf = vertical + strafe - heading;

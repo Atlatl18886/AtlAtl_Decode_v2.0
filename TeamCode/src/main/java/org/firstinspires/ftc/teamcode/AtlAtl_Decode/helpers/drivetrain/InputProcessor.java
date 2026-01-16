@@ -65,6 +65,7 @@ public class InputProcessor {
 
             case LERP:
             case LINEAR:
+            case NORMAL:
             default:
                 return input;
         }
