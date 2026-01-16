@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests.deprecated;
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.IMU;
