@@ -4,9 +4,9 @@ import com.acmerobotics.dashboard.config.Config;
 
 @Config
 public class ShooterConfig {
-    public static double MID_TPS = 850;
-    public static double CLOSE_TPS = 400;
-    public static double FAR_TPS = 1400;
+    public static double MID_TPS = 1100;
+    public static double CLOSE_TPS = 625;
+    public static double FAR_TPS = 1800;
     public static double DEFAULT_TPS = 0;
 
     // TODO: CHECK IF TOMAHAWK IS SCAMMING US

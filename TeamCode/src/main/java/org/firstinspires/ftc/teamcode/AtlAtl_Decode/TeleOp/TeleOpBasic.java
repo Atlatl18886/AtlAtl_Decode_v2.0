@@ -45,13 +45,13 @@ public class TeleOpBasic extends OpMode {
 
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
-        leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
-        rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
+        leftBack = hardwareMap.get(DcMotorEx.class, "perp");
+        rightBack = hardwareMap.get(DcMotorEx.class, "par");
 
-        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -104,7 +104,11 @@ public class TeleOpBasic extends OpMode {
     private void Drive() {
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;
-        double rx = gamepad1.right_stick_x;
+        double rx = -gamepad1.right_stick_x;
+
+        y = applyCurve(y);
+        x = applyCurve(x);
+        rx = applyCurve(rx);
 
         y *= TeleOpConfig.speedFactor;
         x *= TeleOpConfig.speedFactor;
@@ -112,8 +116,8 @@ public class TeleOpBasic extends OpMode {
 
         double lf = y + x + rx;
         double lb = y - x + rx;
-        double rf = y + x - rx;
-        double rb = y - x - rx;
+        double rf = y - x - rx;
+        double rb = y + x - rx;
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
 
@@ -151,7 +155,9 @@ public class TeleOpBasic extends OpMode {
         else if (gamepad2.y) targetVel = FAR;
         else targetVel = DEFAULT;
 
-        shooter.setVelocity(targetVel);
+        try {
+            shooter.setVelocity(targetVel);
+        } catch (Exception ignored) {}
 
 //        double error = Math.abs(shooter.getVelocity() - targetVel);
 //        if (error < 60 && targetVel != DEFAULT) {
@@ -160,6 +166,25 @@ public class TeleOpBasic extends OpMode {
 
         shooterTelem.addf("Target", "%.0f", targetVel);
         shooterTelem.addf("Actual", "%.0f", shooter.getVelocity());
+    }
+    private double applyCurve(double input) {
+        if (Math.abs(input) < TeleOpConfig.DRIVE_DEADZONE) return 0;
+
+        switch (TeleOpConfig.DRIVE_PRESET) {
+            case "TANH":
+                double a = TeleOpConfig.TANH_A;
+                return Math.tanh(a * input) / Math.tanh(a);
+
+            case "QUADRATIC":
+                return input * Math.abs(input);
+
+            case "EXPONENTIAL":
+                return Math.pow(input, 3);
+
+            case "LINEAR":
+            default:
+                return input;
+        }
     }
 
 }

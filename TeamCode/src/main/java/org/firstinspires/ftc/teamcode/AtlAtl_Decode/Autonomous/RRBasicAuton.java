@@ -11,7 +11,7 @@ import com.acmerobotics.roadrunner.Action;
 
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.intake.Intake;
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
-
+/// TODO: RR TUNING https://www.youtube.com/watch?v=x4WbBeTiCPg
 @Autonomous(name="RRBasicAuton", group="RoadRunner")
 public class RRBasicAuton extends LinearOpMode {
     @Override

@@ -14,9 +14,9 @@ public class InputProcessor {
     //returns {strafe, vert, heading} before suppression+slew
     public double[] process(Gamepad gp, DrivePreset preset, double deadzone, double robotSpeed) {
         //db remap raw inputs
-        double rStrafe  = deadbandRemap(-gp.left_stick_x, deadzone);
-        double rVertical = deadbandRemap(gp.left_stick_y, deadzone);
-        double rHeading = deadbandRemap(-gp.right_stick_x, deadzone);
+        double rStrafe  = deadbandRemap(gp.left_stick_x, deadzone);
+        double rVertical = deadbandRemap(-gp.left_stick_y, deadzone);
+        double rHeading = deadbandRemap(gp.right_stick_x, deadzone);
 
         double strafe, vertical, heading;
 

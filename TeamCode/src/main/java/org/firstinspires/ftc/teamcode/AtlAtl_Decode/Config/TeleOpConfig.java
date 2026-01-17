@@ -6,7 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 public class TeleOpConfig {
 
     // DRIVE CONFIG
-    public static final String DRIVE_PRESET = "LINEAR";
+    public static final String DRIVE_PRESET = "TANH";
     ///"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT), "TANH", "CUBIC_BLEND", "ADAPTIVE"
     ///for teleopbasic: LINEAR, EXPONENTIAL, QUADRATIC, TANH
     public static double speedFactor = 0.9; //sens
