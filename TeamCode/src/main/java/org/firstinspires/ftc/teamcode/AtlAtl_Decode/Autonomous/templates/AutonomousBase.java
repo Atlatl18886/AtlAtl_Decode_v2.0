@@ -19,14 +19,14 @@ public abstract class AutonomousBase extends LinearOpMode {
     protected IMU imu;
 
     //config
-    private static final double TICKS_PER_REV = 384.5;
-    private static final double WHEEL_DIAMETER_IN = 104.0 / 25.4;
-    private static final double TICKS_PER_INCH = (TICKS_PER_REV / (WHEEL_DIAMETER_IN * Math.PI)) * 1.1;
+    protected static double TICKS_PER_REV = 384.5;
+    protected static double WHEEL_DIAMETER_IN = 104.0 / 25.4;
+    protected static double TICKS_PER_INCH = (TICKS_PER_REV / (WHEEL_DIAMETER_IN * Math.PI)) * 1.1;
     protected double turn_kP = 0.018;
     protected double turn_kD = 0.0012;
     protected double drive_correction_kP = 0.025;
     //deadbands
-    protected final double TURN_DEADBAND = 1.0;//deg
+    protected final double TURN_DEADBAND = 3.0;//deg
     protected final double DRIVE_CORRECTION_DEADBAND = 0.5;//deg
     protected final double MIN_TURN_POWER = 0.1;//min power to move
 
