@@ -21,20 +21,20 @@ public abstract class AutonomousBase extends LinearOpMode {
     //config
     protected static double TICKS_PER_REV = 384.5;
     protected static double WHEEL_DIAMETER_IN = 104.0 / 25.4;
-    protected static double TICKS_PER_INCH = (TICKS_PER_REV / (WHEEL_DIAMETER_IN * Math.PI)) * 1.1;
+    protected static double TICKS_PER_INCH = (TICKS_PER_REV / (WHEEL_DIAMETER_IN * Math.PI)) * 0.5;
     protected double turn_kP = 0.018;
     protected double turn_kD = 0.0012;
     protected double drive_correction_kP = 0.025;
     //deadbands
     protected final double TURN_DEADBAND = 3.0;//deg
-    protected final double DRIVE_CORRECTION_DEADBAND = 0.5;//deg
+    protected final double DRIVE_CORRECTION_DEADBAND = 0.3;//deg
     protected final double MIN_TURN_POWER = 0.1;//min power to move
 
     public void initDt() {
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
-        leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
-        rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
+        leftBack = hardwareMap.get(DcMotorEx.class, "perp");
+        rightBack = hardwareMap.get(DcMotorEx.class, "par");
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
         rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -59,25 +59,15 @@ public abstract class AutonomousBase extends LinearOpMode {
     ///drive with imu correction
     public void driveFor(double inches, double power, double timeout) {
         resetEncoders();
-        double targetAngle = getHeading();
         int ticks = (int)(inches * TICKS_PER_INCH);
-
         setTargets(ticks, ticks, ticks, ticks);
         setDriveMode(DcMotor.RunMode.RUN_TO_POSITION);
-
         ElapsedTime timer = new ElapsedTime();
         while (opModeIsActive() && isBusy() && timer.seconds() < timeout) {
-            double error = AngleUnit.normalizeDegrees(targetAngle - getHeading());
-            double correction = 0;
-
-            if (Math.abs(error) > DRIVE_CORRECTION_DEADBAND) {
-                correction = error * drive_correction_kP;
-            }
-
-            leftFront.setPower(power - correction);
-            leftBack.setPower(power - correction);
-            rightFront.setPower(power + correction);
-            rightBack.setPower(power + correction);
+            leftFront.setPower(power);
+            leftBack.setPower(power);
+            rightFront.setPower(power);
+            rightBack.setPower(power);
         }
         stopDrive();
     }
