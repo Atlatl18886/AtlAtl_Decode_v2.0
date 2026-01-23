@@ -1,35 +1,71 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.intake;
 
-import androidx.annotation.NonNull;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Intake {
-    private DcMotorEx intake;
+    private final DcMotorEx intake;
+    private final DcMotorEx antiroller;
+
+    public static double idle = 0;
+    public static double active = 1.0;
+    public static double reverse = -1.0;
+    public static double idleA = 0.4;
+    public static double activeA = 0.7;
+    public static double reverseA = -0.6;
 
     public Intake(HardwareMap hardwareMap) {
         intake = hardwareMap.get(DcMotorEx.class, "intake");
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        intake.setDirection(DcMotorSimple.Direction.FORWARD);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        antiroller = hardwareMap.get(DcMotorEx.class, "antiroller");
+        antiroller.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
-    public class IntakeAction implements Action {
-        double power;
-        public IntakeAction(double p) { this.power = p; }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket packet) {
-            intake.setPower(power);
+    public Action idle() {
+        return packet -> {
+            intake.setPower(idle);
+            antiroller.setPower(idle);
             return false;
-        }
+        };
     }
 
-    public Action setPower(double p) {
-        return new IntakeAction(p);
+    public Action setIntakePower(double p) {
+        return telemetryPacket -> {
+            intake.setPower(p);
+            return false;
+        };
     }
+    public Action setAntiPower(double p) {
+        return telemetryPacket -> {
+            antiroller.setPower(p);
+            return false;
+        };
+    }
+
+    public Action in() {
+        return packet -> {
+            intake.setPower(active);
+            antiroller.setPower(active);
+            return false;
+        };
+    }
+    public Action out() {
+        return telemetryPacket -> {
+            intake.setPower(reverse);
+            antiroller.setPower(reverse);
+            return false;
+        };
+    }
+
+    public Action stop() {
+        return packet -> {
+            intake.setPower(0);
+            antiroller.setPower(0);
+            return false;
+        };
+    }
+
 }

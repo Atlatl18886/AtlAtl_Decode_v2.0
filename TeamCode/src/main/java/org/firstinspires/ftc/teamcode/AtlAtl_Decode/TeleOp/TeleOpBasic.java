@@ -48,10 +48,14 @@ public class TeleOpBasic extends OpMode {
         leftBack = hardwareMap.get(DcMotorEx.class, "perp");
         rightBack = hardwareMap.get(DcMotorEx.class, "par");
 
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
-        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
-        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+//        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+//        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+//        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+//        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -63,6 +67,7 @@ public class TeleOpBasic extends OpMode {
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
 
+        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooter.setVelocityPIDFCoefficients(SHOOTER_kP, SHOOTER_kI, SHOOTER_kD, SHOOTER_kF);
 
@@ -103,7 +108,7 @@ public class TeleOpBasic extends OpMode {
 
     private void Drive() {
         double y = -gamepad1.left_stick_y;
-        double x = gamepad1.left_stick_x;
+        double x = gamepad1.left_stick_x * 1.1;
         double rx = -gamepad1.right_stick_x;
 
         y = applyCurve(y);

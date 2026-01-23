@@ -6,8 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Vector2d;
-import com.acmerobotics.roadrunner.Action;
 
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.intake.Intake;
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
@@ -26,13 +24,13 @@ public class RRBasicAuton extends LinearOpMode {
         Actions.runBlocking(
                 drive.actionBuilder(initialPose)
                         // 1.intake on
-                        .stopAndAdd(intake.setPower(1.0))
+                        .stopAndAdd(intake.setIntakePower(1.0))
 
                         // 2.forward 2 ft
                         .lineToX(24)
 
                         // 3.intake off
-                        .stopAndAdd(intake.setPower(0.0))
+                        .stopAndAdd(intake.setIntakePower(0))
 
                         .build()
         );
