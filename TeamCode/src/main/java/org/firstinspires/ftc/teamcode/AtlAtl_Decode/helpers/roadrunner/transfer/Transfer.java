@@ -36,5 +36,25 @@ public class Transfer {
             return false;
         };
     }
+    public Action pulse(double seconds) {
+        final double[] startTime = { -1 };
+
+        return packet -> {
+            if (startTime[0] < 0) {
+                startTime[0] = System.currentTimeMillis() / 1000.0;
+            }
+
+            double elapsed = (System.currentTimeMillis() / 1000.0) - startTime[0];
+
+            if (elapsed < seconds) {
+                transfer.setPower(active);
+                return true;
+            } else {
+                transfer.setPower(0);
+                return false;
+            }
+        };
+    }
+
 
 }

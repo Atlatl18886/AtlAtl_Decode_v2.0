@@ -1,20 +1,38 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous;
+
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.templates.AutonomousBase;
-@Autonomous(name="Blue 6", group="LCs")
-public class Blue6Ball extends AutonomousBase {
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.acmerobotics.roadrunner.Pose2d;
+
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.intake.Intake;
+import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
+@Autonomous(name="Blue 6", group="RoadRunner")
+public class Blue6Ball extends LinearOpMode {
     @Override
     public void runOpMode() {
-        initDt();
+        Pose2d initialPose = new Pose2d(0, 0, 0);
+        MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
+        Intake intake = new Intake(hardwareMap);
 
         waitForStart();
+        if (isStopRequested()) return;
 
-        if (opModeIsActive()) {
-            driveFor(24, 0.5, 3.0);      //forward 2 ft
-            turnToHeading(90, 2.0);      //90 right
-            shooter.setPower(0.8);
-            sleep(1000);
-            shooter.setPower(0);
-        }
+        Actions.runBlocking(
+                drive.actionBuilder(initialPose)
+                        // 1.intake on
+                        .stopAndAdd(intake.setIntakePower(1.0))
+
+                        // 2.forward 2 ft
+                        .lineToX(24)
+
+                        // 3.intake off
+                        .stopAndAdd(intake.setIntakePower(0))
+
+                        .build()
+        );
     }
+
 }
