@@ -12,3 +12,4 @@ include ':TeamCode'
 // ... any other include/rootProject statements ...
 include ':FtcRobotController'
 include ':TeamCode'
+include ':MeepMeepTesting'
