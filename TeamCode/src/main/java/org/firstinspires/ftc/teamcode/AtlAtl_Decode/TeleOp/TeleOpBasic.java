@@ -6,11 +6,14 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.ShooterConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.Toggle;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.TelemetryHelper;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.LoopProfiler;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.SlewRateLimiter;
 
 import java.util.List;
 
@@ -36,6 +39,14 @@ public class TeleOpBasic extends OpMode {
     private final double SHOOTER_kD = ShooterConfig.shooter_Kd;
     private final double SHOOTER_kF = ShooterConfig.shooter_Kf;
 
+    /*
+    private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(3.5);
+    private final SlewRateLimiter verticalLimiter = new SlewRateLimiter(3.5);
+    private final SlewRateLimiter turnLimiter = new SlewRateLimiter(3.5);
+    private final ElapsedTime loopTimer = new ElapsedTime();
+    */
+
+
     @Override
     public void init() {
         allHubs = hardwareMap.getAll(LynxModule.class);
@@ -48,14 +59,10 @@ public class TeleOpBasic extends OpMode {
         leftBack = hardwareMap.get(DcMotorEx.class, "perp");
         rightBack = hardwareMap.get(DcMotorEx.class, "par");
 
-//        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-//        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
-//        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
-//        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
-        leftFront.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftBack.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightFront.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightBack.setDirection(DcMotorSimple.Direction.FORWARD);
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -93,8 +100,12 @@ public class TeleOpBasic extends OpMode {
             double currentVoltage = hardwareMap.voltageSensor.iterator().next().getVoltage();
             loopTelem.addf("voltage", "%.2fV", currentVoltage);
         }
+        /*
+        double loopDt = loopTimer.seconds();
+        loopTimer.reset();
+         */
 
-        Drive();
+        Drive(/*loopDt*/);
         Intake();
         Transfer();
         Shooter();
@@ -106,14 +117,25 @@ public class TeleOpBasic extends OpMode {
         telemetry.update();
     }
 
-    private void Drive() {
+    private void Drive(/*double dt*/) {
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x * 1.1;
-        double rx = -gamepad1.right_stick_x;
+        double rx = gamepad1.right_stick_x;
 
         y = applyCurve(y);
         x = applyCurve(x);
         rx = applyCurve(rx);
+
+        /*
+        if (TeleOpConfig.USE_SLEW_LIMITING) {
+            x = strafeLimiter.calculate(x, dt);
+            y = verticalLimiter.calculate(y, dt);
+            rx = turnLimiter.calculate(rx, dt);
+        } else {
+            strafeLimiter.reset();
+            verticalLimiter.reset();
+            turnLimiter.reset();
+        }*/
 
         y *= TeleOpConfig.speedFactor;
         x *= TeleOpConfig.speedFactor;
@@ -121,8 +143,8 @@ public class TeleOpBasic extends OpMode {
 
         double lf = y + x + rx;
         double lb = y - x + rx;
-        double rf = y - x - rx;
-        double rb = y + x - rx;
+        double rf = y + x - rx;
+        double rb = y - x - rx;
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
 
@@ -136,7 +158,7 @@ public class TeleOpBasic extends OpMode {
 
     public void Intake() {
         boolean prevState = intakeToggle.get();
-        boolean intakeActive = intakeToggle.updateTrigger(gamepad2.left_trigger, 0.1);
+        boolean intakeActive = intakeToggle.updateTrigger(gamepad1.left_trigger, 0.1);
 
         if (intakeActive != prevState) {
             intakeTelem.add("", intakeActive ? "Intake toggled ON" : "Intake toggled OFF");
@@ -150,14 +172,14 @@ public class TeleOpBasic extends OpMode {
     }
 
     private void Transfer() {
-        double p = (gamepad2.right_trigger > 0.1) ? 1.0 : -0.4;
+        double p = (gamepad1.right_trigger > 0.1) ? 1.0 : -0.4;
         transfer.setPower(p);
     }
 
     private void Shooter() {
-        if (gamepad2.a) targetVel = CLOSE;
-        else if (gamepad2.b) targetVel = MID;
-        else if (gamepad2.y) targetVel = FAR;
+        if (gamepad1.a) targetVel = CLOSE;
+        else if (gamepad1.b) targetVel = MID;
+        else if (gamepad1.y) targetVel = FAR;
         else targetVel = DEFAULT;
 
         try {
@@ -166,7 +188,7 @@ public class TeleOpBasic extends OpMode {
 
 //        double error = Math.abs(shooter.getVelocity() - targetVel);
 //        if (error < 60 && targetVel != DEFAULT) {
-//            gamepad2.rumble(0.3, 0.3, 50);
+//            gamepad1.rumble(0.3, 0.3, 50);
 //        }
 
         shooterTelem.addf("Target", "%.0f", targetVel);

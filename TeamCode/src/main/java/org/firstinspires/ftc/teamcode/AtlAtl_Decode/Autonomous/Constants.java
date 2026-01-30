@@ -1,4 +1,4 @@
-package com.example.meepmeeptesting;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -8,7 +8,7 @@ public interface Constants {
     int CLOSE_VELOCITY = 1050;
     int FAR_VELOCITY = 1500;
 
-//red artifacts
+    //red artifacts
     Vector2d GPP_RED_ARTIFACT = new Vector2d(-36, -26);
     Vector2d PGP_RED_ARTIFACT = new Vector2d(-13, -23);
     Vector2d PPG_RED_ARTIFACT = new Vector2d(10, -56);
@@ -27,14 +27,14 @@ public interface Constants {
 
     //starting poses
 
-    Pose2d RED_CLOSE_START = new Pose2d(57, -45, Math.toRadians(-37));
+    Pose2d RED_CLOSE_START = new Pose2d(-60, 38, Math.toRadians(0));
 
     Pose2d BLUE_CLOSE_START = new Pose2d(-60, -38, Math.toRadians(0));
 
     //shooting poses
     double BLUE_ANGLE = Math.toRadians(50);
-    double RED_ANGLE = Math.toRadians(-50);
-    Vector2d RED_SHOOT = new Vector2d(-36,32);
+    double RED_ANGLE = Math.toRadians(130);
+    Vector2d RED_SHOOT = new Vector2d(-31,25);
     Vector2d BLUE_SHOOT = new Vector2d(-31,-25);
 
 }
