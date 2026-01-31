@@ -120,7 +120,7 @@ public class TeleOpBasic extends OpMode {
     private void Drive(/*double dt*/) {
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x * 1.1;
-        double rx = gamepad1.right_stick_x;
+        double rx = -gamepad1.right_stick_x;
 
         y = applyCurve(y);
         x = applyCurve(x);
@@ -177,7 +177,7 @@ public class TeleOpBasic extends OpMode {
     }
 
     private void Shooter() {
-        if (gamepad1.a) targetVel = CLOSE;
+        if (gamepad1.right_bumper) targetVel = CLOSE;
         else if (gamepad1.b) targetVel = MID;
         else if (gamepad1.y) targetVel = FAR;
         else targetVel = DEFAULT;
