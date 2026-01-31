@@ -8,7 +8,7 @@ import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
 
-public class Red6Ball {
+public class  Red6Ball {
     public static void main(String[] args) {
         double Xready = -12;
         double Yready = 25;

@@ -1,11 +1,13 @@
 package com.example.meepmeeptesting;
 
+import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
-public class MeepMeepTesting {
+public class template {
     public static void main(String[] args) {
         MeepMeep meepMeep = new MeepMeep(1000, 60);
 
@@ -14,7 +16,7 @@ public class MeepMeepTesting {
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
                 .build();
 
-        myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(0, 0, 0))
+        Action x = myBot.getDrive().actionBuilder(new Pose2d(0, 0, 0))
                 .lineToX(30)
                 .turn(Math.toRadians(90))
                 .lineToY(30)
@@ -23,7 +25,13 @@ public class MeepMeepTesting {
                 .turn(Math.toRadians(90))
                 .lineToY(0)
                 .turn(Math.toRadians(90))
-                .build());
+                .build();
+
+        myBot.runAction(
+                new SequentialAction(
+                        x
+                )
+        );
 
         meepMeep.setBackground(MeepMeep.Background.FIELD_DECODE_JUICE_DARK)
                 .setDarkMode(true)
