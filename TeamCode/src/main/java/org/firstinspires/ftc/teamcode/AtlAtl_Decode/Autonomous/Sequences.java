@@ -16,7 +16,7 @@ public class Sequences {
     Transfer transfer;
     Shooter shooter;
 
-    Sequences(HardwareMap hardwareMap) {
+    public Sequences(HardwareMap hardwareMap) {
         intake = new Intake(hardwareMap);
         transfer = new Transfer(hardwareMap);
         shooter = new Shooter(hardwareMap);

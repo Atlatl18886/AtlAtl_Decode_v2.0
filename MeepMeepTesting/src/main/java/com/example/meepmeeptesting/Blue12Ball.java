@@ -40,7 +40,6 @@ public class Blue12Ball {
         Action getRow2 = myBot.getDrive().actionBuilder(new Pose2d(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE))
                 .strafeToLinearHeading(Constants.BLUE_READY2, Constants.BLUE_INTAKE_ANGLE)
                 .strafeTo(Constants.BLUE_ROW2)
-
                 .waitSeconds(0.5)
 
                 .strafeTo(Constants.BLUE_READY2)
