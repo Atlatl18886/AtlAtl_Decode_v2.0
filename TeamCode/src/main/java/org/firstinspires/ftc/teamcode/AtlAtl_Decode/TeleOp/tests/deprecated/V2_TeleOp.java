@@ -178,9 +178,6 @@ public class V2_TeleOp extends OpMode {
             vertical *= TeleOpConfig.AIM_TURN_SCALE;
         }
 
-        vertical *= TeleOpConfig.speedFactor;
-        heading *= TeleOpConfig.speedFactor;
-        strafe *= TeleOpConfig.speedFactor;
 
         double leftFrontPower = vertical + strafe + heading;
         double rightFrontPower = vertical + strafe - heading;

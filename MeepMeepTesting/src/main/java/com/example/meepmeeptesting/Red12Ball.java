@@ -3,6 +3,7 @@ package com.example.meepmeeptesting;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
@@ -29,10 +30,9 @@ public class Red12Ball {
                 .strafeToLinearHeading(Constants.RED_READY1, RED_INTAKE_ANGLE)
                 .strafeTo(Constants.RED_ROW1)
                 .waitSeconds(0.5)
-                .strafeTo(Constants.RED_READY1)
                 .build();
 
-        Action scoreRow1 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_READY1, RED_INTAKE_ANGLE))
+        Action scoreRow1 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_ROW1, RED_INTAKE_ANGLE))
                 .strafeToLinearHeading(Constants.RED_SHOOT, Constants.RED_ANGLE)
                 .build();
 
@@ -42,28 +42,33 @@ public class Red12Ball {
                 .strafeToLinearHeading(Constants.RED_READY2, RED_INTAKE_ANGLE)
                 .strafeTo(Constants.RED_ROW2)
                 .waitSeconds(0.5)
-                .strafeTo(Constants.RED_READY2)
+                .strafeTo(new Vector2d(Constants.RED_READY2.x, Constants.RED_READY2.y+15))
                 .build();
 
-        Action scoreRow2 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_READY2, RED_INTAKE_ANGLE))
-                .strafeToLinearHeading(Constants.RED_SHOOT, Constants.RED_ANGLE)
-                .waitSeconds(0.5)
-                .build();
+        Action driveToGate = myBot.getDrive().actionBuilder(new Pose2d(new Vector2d(Constants.RED_READY2.x, Constants.RED_READY2.y+15), Constants.RED_ANGLE))
+//                .strafeToLinearHeading(Constants.RED_GATE_SAFETY, 0)
+//
+//                .strafeTo(Constants.RED_GATE)
+//                .waitSeconds(0.5)
 
-
-
-        Action driveToGate = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
-                .strafeToLinearHeading(Constants.RED_GATE_SAFETY, 0)
-
-                .strafeTo(Constants.RED_GATE)
-                .waitSeconds(0.5)
-
+                .waitSeconds(0.3)
+                .strafeToLinearHeading(Constants.RED_GATE, 0)
                 .strafeTo(Constants.RED_GATE_READY)
                 .build();
 
+        Action scoreRow2 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_GATE_READY, 0))
+                .strafeTo(Constants.RED_SHOOT)
+                .turnTo(Constants.RED_ANGLE)
+                .waitSeconds(0.5)
+                .build();
 
-        Action getRow3 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_GATE_READY, 0))
-                .splineToLinearHeading(new Pose2d(Constants.RED_READY3, RED_INTAKE_ANGLE), Math.toRadians(0))
+
+
+
+
+
+        Action getRow3 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
+                .strafeTo(Constants.RED_READY3)
                 .strafeTo(Constants.RED_ROW3)
                 .waitSeconds(0.5)
                 .strafeTo(Constants.RED_READY3)
@@ -80,8 +85,8 @@ public class Red12Ball {
                         getRow1,
                         scoreRow1,
                         getRow2,
-                        scoreRow2,
                         driveToGate,
+                        scoreRow2,
                         getRow3,
                         scoreRow3
                 ));

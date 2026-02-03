@@ -38,10 +38,10 @@ public class TeleOpTest extends OpMode {
 
     private List<LynxModule> allHubs;
 
-    private static final double CLOSE = ShooterConfig.CLOSE_TPS;
-    private static final double MID = ShooterConfig.MID_TPS;
-    private static final double FAR = ShooterConfig.FAR_TPS;
-    private static final double DEFAULT = ShooterConfig.DEFAULT_TPS;
+    private static final double CLOSE = ShooterConfig.CLOSE_RPM;
+    private static final double MID = ShooterConfig.MID_RPM;
+    private static final double FAR = ShooterConfig.FAR_RPM;
+    private static final double DEFAULT = ShooterConfig.DEFAULT_RPM;
     private final double SHOOTER_kP = ShooterConfig.shooter_Kp;
     private final double SHOOTER_kI = ShooterConfig.shooter_Ki;
     private final double SHOOTER_kD = ShooterConfig.shooter_Kd;
@@ -203,9 +203,6 @@ public class TeleOpTest extends OpMode {
             heading *= TeleOpConfig.AIM_TURN_SCALE;
             vertical *= TeleOpConfig.AIM_TURN_SCALE;
         }
-        vertical *= TeleOpConfig.speedFactor;
-        heading *= TeleOpConfig.speedFactor;
-        strafe *= TeleOpConfig.speedFactor;
 
         //conditional slew rate limiting
         if (TeleOpConfig.USE_SLEW_LIMITING) {

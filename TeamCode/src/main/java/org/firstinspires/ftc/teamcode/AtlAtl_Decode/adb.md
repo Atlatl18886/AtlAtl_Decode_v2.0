@@ -24,4 +24,3 @@ Navigate to Plugins > Marketplace, and search for the "ADB Wi-fi" plugin (by Yur
 Install the plugin and restart Android Studio.
 After restarting and connecting to the Control Hub's Wi-Fi network, a Wi-Fi icon will appear on the right-hand side of the screen. Click it to add and manage connections.
 Once connected, the Control Hub will be available as a target device in Android Studio, allowing you to build and deploy your code wirelessly using the "Run" button. 
-

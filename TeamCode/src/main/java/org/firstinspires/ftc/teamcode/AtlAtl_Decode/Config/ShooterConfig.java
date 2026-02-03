@@ -2,12 +2,14 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config;
 
 import com.acmerobotics.dashboard.config.Config;
 
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.Conversions;
+
 @Config
 public class ShooterConfig {
-    public static double MID_TPS = 890;
-    public static double CLOSE_TPS = 540;
-    public static double FAR_TPS = 1100;
-    public static double DEFAULT_TPS = 0;
+    public static double MID_RPM = Conversions.rpmToTps(1950, 28);
+    public static double CLOSE_RPM = Conversions.rpmToTps(1200,28);
+    public static double FAR_RPM = Conversions.rpmToTps(3100, 28);
+    public static double DEFAULT_RPM = 0;
 
     // TODO: CHECK IF TOMAHAWK IS SCAMMING US
     public static double shooter_Kf = 16; // 1.0/rough max tps
