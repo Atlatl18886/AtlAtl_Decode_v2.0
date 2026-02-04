@@ -1,13 +1,16 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.ShooterConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.Toggle;
@@ -17,14 +20,15 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.LoopProfiler;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.SlewRateLimiter;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.PrioritySuppression;
 
-
 import java.util.List;
 
-@TeleOp(name="V2.5 TeleOp ROBO CENTRIC", group="Main")
-public class TeleOpBasic extends OpMode {
+@TeleOp(name="V2.5 TeleOp + both centric", group="Main")
+public class TeleOpFCD extends OpMode {
 
+    // Hardware
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
     private DcMotorEx intake, transfer, shooter, antiroller;
+    private IMU imu;
 
     private final Toggle intakeToggle = new Toggle();
     private TelemetryHelper driveTelem, intakeTelem, shooterTelem, debugTelem, loopTelem;
@@ -49,6 +53,8 @@ public class TeleOpBasic extends OpMode {
     private final ElapsedTime loopTimer = new ElapsedTime();
 
     private double loopDt;
+    private double headingOffset = 0;
+    private boolean isFieldCentric = true;
 
     @Override
     public void init() {
@@ -56,6 +62,12 @@ public class TeleOpBasic extends OpMode {
         for (LynxModule module : allHubs) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
         }
+
+        imu = hardwareMap.get(IMU.class, "imu");
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD));
+        imu.initialize(parameters);
 
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
@@ -126,9 +138,32 @@ public class TeleOpBasic extends OpMode {
     }
 
     private void Drive(double dt) {
-        double y = gamepad1.left_stick_y;
-        double x = -gamepad1.left_stick_x * 1.1;
-        double rx = -gamepad1.right_stick_x;
+        if (gamepad1.options || gamepad1.start) {
+            imu.resetYaw();
+            headingOffset = 0;
+        }
+
+
+        double y = -gamepad1.left_stick_y;
+        double x = gamepad1.left_stick_x * 1.1;
+        double rx = gamepad1.right_stick_x;
+        double heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+
+        if (gamepad1.dpad_up || gamepad1.dpad_down) {
+            double target = gamepad1.dpad_up ? 0 : Math.PI;
+            double current = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double error = AngleUnit.normalizeRadians(target - current);
+            rx = error * 0.8; //TODO: TUNE
+        }
+
+//field centric toggle
+        if (isFieldCentric) {
+            heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double rotX = x * Math.cos(-heading) - y * Math.sin(-heading);
+            double rotY = x * Math.sin(-heading) + y * Math.cos(-heading);
+            x = rotX;
+            y = rotY;
+        }
 
         y = applyCurve(y);
         x = applyCurve(x);
@@ -156,6 +191,9 @@ public class TeleOpBasic extends OpMode {
             x *= TeleOpConfig.AIM_TURN_SCALE;
             rx *= TeleOpConfig.AIM_TURN_SCALE;
         }
+        if (gamepad1.back) {
+            isFieldCentric = !isFieldCentric;
+        }
 
         double lf = y + x + rx;
         double lb = y - x + rx;
@@ -164,14 +202,13 @@ public class TeleOpBasic extends OpMode {
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
 
-        leftFront.setPower((lf / denominator));
-        leftBack.setPower((lb / denominator));
-        rightFront.setPower((rf / denominator));
-        rightBack.setPower((rb / denominator));
+        leftFront.setPower(lf / denominator);
+        leftBack.setPower(lb / denominator);
+        rightFront.setPower(rf / denominator);
+        rightBack.setPower(rb/ denominator);
 
-        driveTelem.add("Preset", TeleOpConfig.DRIVE_PRESET);
-        driveTelem.add("rate limiting?", TeleOpConfig.USE_SLEW_LIMITING);
-        driveTelem.add("priority supression?", TeleOpConfig.USE_PRIORITY_SUPPRESSION);
+        driveTelem.add("Mode", "FIELD CENTRIC");
+        driveTelem.add("Heading", Math.toDegrees(heading));
     }
 
     public void Intake() {
@@ -230,5 +267,4 @@ public class TeleOpBasic extends OpMode {
                 return input;
         }
     }
-
 }

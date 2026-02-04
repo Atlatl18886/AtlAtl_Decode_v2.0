@@ -8,7 +8,7 @@ import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
-public class Red12Ball {
+public class Red9Ball {
     public static void main(String[] args) {
 
         MeepMeep meepMeep = new MeepMeep(800);
@@ -37,7 +37,6 @@ public class Red12Ball {
                 .build();
 
 
-
         Action getRow2 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
                 .strafeToLinearHeading(Constants.RED_READY2, RED_INTAKE_ANGLE)
                 .strafeTo(Constants.RED_ROW2)
@@ -46,6 +45,7 @@ public class Red12Ball {
                 .build();
 
         Action driveToGate = myBot.getDrive().actionBuilder(new Pose2d(new Vector2d(Constants.RED_READY2.x, Constants.RED_READY2.y+15), Constants.RED_INTAKE_ANGLE))
+
                 .waitSeconds(0.3)
                 .strafeToLinearHeading(Constants.RED_GATE, 0)
                 .strafeTo(Constants.RED_GATE_READY)
@@ -57,19 +57,6 @@ public class Red12Ball {
                 .waitSeconds(0.5)
                 .build();
 
-        Action getRow3 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
-                .turnTo(0)
-                .strafeTo(Constants.RED_READY3)
-                .turnTo(Constants.RED_INTAKE_ANGLE)
-                .strafeTo(Constants.RED_ROW3)
-                .waitSeconds(0.5)
-                .strafeTo(Constants.RED_READY3)
-                .build();
-
-        Action scoreRow3 = myBot.getDrive().actionBuilder(new Pose2d(Constants.RED_READY3, RED_INTAKE_ANGLE))
-                .strafeToLinearHeading(Constants.RED_SHOOT, Constants.RED_ANGLE)
-                .waitSeconds(0.5)
-                .build();
 
         myBot.runAction(
                 new SequentialAction(
@@ -78,9 +65,7 @@ public class Red12Ball {
                         scoreRow1,
                         getRow2,
                         driveToGate,
-                        scoreRow2,
-                        getRow3,
-                        scoreRow3
+                        scoreRow2
                 ));
 
         meepMeep.setBackground(MeepMeep.Background.FIELD_DECODE_JUICE_DARK)

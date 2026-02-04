@@ -15,7 +15,7 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.shooter.S
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer.Transfer;
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Sequences;
-@Autonomous(name="Blue 6", group="RoadRunner")
+@Autonomous(name="Blue 6", group="RR Blue")
 public class Blue6Ball extends LinearOpMode {
     @Override
     public void runOpMode() {

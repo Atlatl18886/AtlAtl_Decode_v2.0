@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -25,6 +26,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import java.util.List;
 
 @TeleOp(name="V2.5 TeleOp?", group="Main")
+@Disabled
 public class TeleOpTest extends OpMode {
     public enum DrivePreset {
         LERP, QUADRATIC, CUBIC_BLEND, EXPONENTIAL, TANH, LINEAR, ADAPTIVE, NORMAL

@@ -6,14 +6,20 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.Conversions;
 
 @Config
 public class ShooterConfig {
-    public static double MID_RPM = Conversions.rpmToTps(1950, 28);
-    public static double CLOSE_RPM = Conversions.rpmToTps(1200,28);
-    public static double FAR_RPM = Conversions.rpmToTps(3100, 28);
+    /// when changing values in dash, change THESE
+    public static double close = 1200;
+    public static double mid = 1600;
+    public static double far = 3200;
+
+    /// dont change these in dash
+    public static double MID_RPM = Conversions.rpmToTps(mid, 28);
+    public static double CLOSE_RPM = Conversions.rpmToTps(close,28);
+    public static double FAR_RPM = Conversions.rpmToTps(far, 28);
     public static double DEFAULT_RPM = 0;
 
-    // TODO: CHECK IF TOMAHAWK IS SCAMMING US
-    public static double shooter_Kf = 16; // 1.0/rough max tps
-    public static double shooter_Kp = 520;  // Adjust if reaction is too slow
+    // TODO: RETUNE kI
+    public static double shooter_Kf = 16.3; // 1.0/rough max tps
+    public static double shooter_Kp = 515;  // Adjust if reaction is too slow
     public static double shooter_Ki = 1.65;
     public static double shooter_Kd = 5;
 }

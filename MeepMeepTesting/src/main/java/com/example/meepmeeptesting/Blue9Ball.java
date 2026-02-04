@@ -8,7 +8,7 @@ import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
-public class Blue12Ball {
+public class Blue9Ball {
     public static void main(String[] args) {
 
         MeepMeep meepMeep = new MeepMeep(800);
@@ -57,20 +57,6 @@ public class Blue12Ball {
                 .build();
 
 
-        Action getRow3 = myBot.getDrive().actionBuilder(new Pose2d(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE))
-                .turnTo(0)
-                .strafeTo(Constants.BLUE_READY3)
-                .turnTo(Constants.BLUE_INTAKE_ANGLE)
-                .strafeTo(Constants.BLUE_ROW3)
-                .waitSeconds(0.5)
-                .strafeTo(Constants.BLUE_READY3)
-                .build();
-
-        Action scoreRow3 = myBot.getDrive().actionBuilder(new Pose2d(Constants.BLUE_READY3, Constants.BLUE_INTAKE_ANGLE))
-                .strafeToLinearHeading(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE)
-                .waitSeconds(0.5)
-                .build();
-
         myBot.runAction(
                 new SequentialAction(
                         preload,
@@ -78,9 +64,7 @@ public class Blue12Ball {
                         scoreRow1,
                         getRow2,
                         driveToGate,
-                        scoreRow2,
-                        getRow3,
-                        scoreRow3
+                        scoreRow2
                 ));
 
         meepMeep.setBackground(MeepMeep.Background.FIELD_DECODE_JUICE_DARK)
