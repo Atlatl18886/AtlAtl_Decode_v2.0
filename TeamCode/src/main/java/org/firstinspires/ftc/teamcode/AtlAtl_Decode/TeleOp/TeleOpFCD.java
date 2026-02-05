@@ -46,9 +46,9 @@ public class TeleOpFCD extends OpMode {
     private final double SHOOTER_kD = ShooterConfig.shooter_Kd;
     private final double SHOOTER_kF = ShooterConfig.shooter_Kf;
 
-    private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(1.3);
-    private final SlewRateLimiter verticalLimiter = new SlewRateLimiter(1.3);
-    private final SlewRateLimiter turnLimiter = new SlewRateLimiter(1.3);
+    private final SlewRateLimiter strafeLimiter = new SlewRateLimiter(6.5, 9.0);
+    private final SlewRateLimiter verticalLimiter = new SlewRateLimiter(6.5, 9.0);
+    private final SlewRateLimiter turnLimiter = new SlewRateLimiter(8.0, 10.0);
     private PrioritySuppression suppressionHelper = new PrioritySuppression();
     private final ElapsedTime loopTimer = new ElapsedTime();
 
