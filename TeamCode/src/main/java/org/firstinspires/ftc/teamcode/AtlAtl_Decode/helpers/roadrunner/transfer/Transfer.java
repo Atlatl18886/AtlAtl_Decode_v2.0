@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -11,7 +13,7 @@ public class Transfer {
     public static double idle = -0.4;
     public static double active = 1.0;
 
-    public Transfer(HardwareMap hardwareMap) {
+    public Transfer(@NonNull HardwareMap hardwareMap) {
         transfer = hardwareMap.get(DcMotorEx.class, "transfer");
         transfer.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }

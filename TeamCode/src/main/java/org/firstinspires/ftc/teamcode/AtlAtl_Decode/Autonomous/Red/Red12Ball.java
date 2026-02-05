@@ -59,6 +59,8 @@ public class Red12Ball extends LinearOpMode {
         Action driveToGate = drive.actionBuilder(new Pose2d(new Vector2d(Constants.RED_READY2.x, Constants.RED_READY2.y+15), Constants.RED_INTAKE_ANGLE))
                 .waitSeconds(0.3)
                 .strafeToLinearHeading(Constants.RED_GATE, 0)
+                .waitSeconds(0.65)
+
                 .strafeTo(Constants.RED_GATE_READY)
                 .build();
 

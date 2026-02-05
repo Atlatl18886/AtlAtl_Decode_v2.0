@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.shooter;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
+
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -22,7 +26,7 @@ public class Shooter {
     public static double kD = ShooterConfig.shooter_Kd;
     public static double kF = ShooterConfig.shooter_Kf;
 
-    public Shooter(HardwareMap hardwareMap) {
+    public Shooter(@NonNull HardwareMap hardwareMap) {
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 

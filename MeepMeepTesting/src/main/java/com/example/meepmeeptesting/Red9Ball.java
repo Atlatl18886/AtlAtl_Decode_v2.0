@@ -48,6 +48,7 @@ public class Red9Ball {
 
                 .waitSeconds(0.3)
                 .strafeToLinearHeading(Constants.RED_GATE, 0)
+                .waitSeconds(0.65)
                 .strafeTo(Constants.RED_GATE_READY)
                 .build();
 

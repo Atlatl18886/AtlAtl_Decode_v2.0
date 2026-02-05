@@ -46,7 +46,10 @@ public class Blue9Ball {
 
                 .waitSeconds(0.3)
                 .strafeToLinearHeading(Constants.BLUE_GATE, 0)
+                .waitSeconds(0.65)
+
                 .strafeTo(Constants.BLUE_GATE_READY)
+
                 .build();
 
 

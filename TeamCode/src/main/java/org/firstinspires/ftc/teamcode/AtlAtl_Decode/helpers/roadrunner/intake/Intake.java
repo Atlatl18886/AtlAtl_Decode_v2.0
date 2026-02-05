@@ -1,8 +1,11 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.intake;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.roadrunner.Action;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Intake {
@@ -16,12 +19,14 @@ public class Intake {
     public static double activeA = 0.7;
     public static double reverseA = -0.6;
 
-    public Intake(HardwareMap hardwareMap) {
+    public Intake(@NonNull HardwareMap hardwareMap) {
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intake.setDirection(DcMotorSimple.Direction.REVERSE);
 
         antiroller = hardwareMap.get(DcMotorEx.class, "antiroller");
         antiroller.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        antiroller.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     public Action idle() {
