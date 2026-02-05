@@ -14,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.ShooterConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.Toggle;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.ButtonHoldAction;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.TelemetryHelper;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.Conversions;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.LoopProfiler;
@@ -31,14 +32,13 @@ public class TeleOpFCD extends OpMode {
     private IMU imu;
 
     private final Toggle intakeToggle = new Toggle();
+    private final Toggle fcdToggle = new Toggle(true);
+    private final ButtonHoldAction aimHold = new ButtonHoldAction();
     private TelemetryHelper driveTelem, intakeTelem, shooterTelem, debugTelem, loopTelem;
     private final LoopProfiler profiler = new LoopProfiler();
     private List<LynxModule> allHubs;
 
     private double targetVel = 0;
-    private static final double CLOSE = ShooterConfig.CLOSE_TPS;
-    private static final double MID = ShooterConfig.MID_TPS;
-    private static final double FAR = ShooterConfig.FAR_TPS;
     private static final double DEFAULT = ShooterConfig.DEFAULT;
 
     private final double SHOOTER_kP = ShooterConfig.shooter_Kp;
@@ -100,6 +100,7 @@ public class TeleOpFCD extends OpMode {
         shooterTelem = TelemetryHelper.create(telemetry, "Shooter--");
         debugTelem = TelemetryHelper.create(telemetry, "Debug--");
         loopTelem = debugTelem.child("--Loop");
+        fcdToggle.set(true);
     }
 
     @Override
@@ -143,6 +144,8 @@ public class TeleOpFCD extends OpMode {
             imu.resetYaw();
             headingOffset = 0;
         }
+        fcdToggle.update(gamepad1.back);
+        boolean isFieldCentric = fcdToggle.get();
 
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;
@@ -192,13 +195,11 @@ public class TeleOpFCD extends OpMode {
             turnLimiter.reset();
         }
 
-        if (gamepad1.left_bumper) {
+        aimHold.update(gamepad1.left_bumper);
+        if (aimHold.isHeld()) {
             y *= TeleOpConfig.AIM_TURN_SCALE;
             x *= TeleOpConfig.AIM_TURN_SCALE;
             rx *= TeleOpConfig.AIM_TURN_SCALE;
-        }
-        if (gamepad1.back) {
-            isFieldCentric = !isFieldCentric;
         }
 
         double lf = y + x + rx;
@@ -236,9 +237,9 @@ public class TeleOpFCD extends OpMode {
     }
 
     private void Shooter() {
-        if (gamepad1.right_bumper) targetVel = CLOSE;
-        else if (gamepad1.b) targetVel = MID;
-        else if (gamepad1.y) targetVel = FAR;
+        if (gamepad1.right_bumper) targetVel = ShooterConfig.getCloseTps();
+        else if (gamepad1.b) targetVel = ShooterConfig.getMidTps();
+        else if (gamepad1.y) targetVel = ShooterConfig.getFarTps();
         else targetVel = DEFAULT;
 
         try {

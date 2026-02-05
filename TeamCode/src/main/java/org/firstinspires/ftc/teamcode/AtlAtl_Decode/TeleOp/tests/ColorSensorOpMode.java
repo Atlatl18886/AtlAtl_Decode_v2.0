@@ -16,6 +16,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.ShooterConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.Toggle;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.ButtonHoldAction;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.TelemetryHelper;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.Conversions;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.LoopProfiler;
@@ -34,14 +35,13 @@ public class ColorSensorOpMode extends OpMode {
     private DistanceSensor distanceSensor;
 
     private final Toggle intakeToggle = new Toggle();
+    private final Toggle fieldCentricToggle = new Toggle(true);
+    private final ButtonHoldAction aimHold = new ButtonHoldAction();
     private TelemetryHelper driveTelem, intakeTelem, shooterTelem, debugTelem, loopTelem;
     private final LoopProfiler profiler = new LoopProfiler();
     private List<LynxModule> allHubs;
 
     private double targetVel = 0;
-    private static final double CLOSE = ShooterConfig.CLOSE_TPS;
-    private static final double MID = ShooterConfig.MID_TPS;
-    private static final double FAR = ShooterConfig.FAR_TPS;
     private static final double DEFAULT = ShooterConfig.DEFAULT;
 
     private final double SHOOTER_kP = ShooterConfig.shooter_Kp;
@@ -105,6 +105,7 @@ public class ColorSensorOpMode extends OpMode {
         shooterTelem = TelemetryHelper.create(telemetry, "Shooter--");
         debugTelem = TelemetryHelper.create(telemetry, "Debug--");
         loopTelem = debugTelem.child("--Loop");
+        fieldCentricToggle.set(true);
     }
 
     @Override
@@ -148,7 +149,8 @@ public class ColorSensorOpMode extends OpMode {
             imu.resetYaw();
             headingOffset = 0;
         }
-
+        fieldCentricToggle.update(gamepad1.back);
+        boolean isFieldCentric = fieldCentricToggle.get();
 
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x * 1.1;
@@ -197,13 +199,11 @@ public class ColorSensorOpMode extends OpMode {
             turnLimiter.reset();
         }
 
-        if (gamepad1.left_bumper) {
+        aimHold.update(gamepad1.left_bumper);
+        if (aimHold.isHeld()) {
             y *= TeleOpConfig.AIM_TURN_SCALE;
             x *= TeleOpConfig.AIM_TURN_SCALE;
             rx *= TeleOpConfig.AIM_TURN_SCALE;
-        }
-        if (gamepad1.back) {
-            isFieldCentric = !isFieldCentric;
         }
 
         double lf = y + x + rx;
@@ -243,30 +243,21 @@ public class ColorSensorOpMode extends OpMode {
 
     private void Shooter() {
         double dist = distanceSensor.getDistance(DistanceUnit.INCH);
-        /***
-         adaptive shooter speed:
-         goal: Map distance (in) -> desired shooter wheel speed (RPM) via a linear fit
-            adaptiveVal = 1200 + (dist - 15) * 14.81
-            expands to:
-              adaptiveVal = (14.81 * dist) + (1200 - 14.81*15) ≈ 14.81*dist + 977.85
-            Meaning:
-              14.81 rpm per inch is the slope (per inch)
-              ~978 rpm represents base rpm at 0 inches
-              15" and 1200 RPM being example x and y cords
-         **/
-        double adaptiveVal = 1200 + (dist - 15) * 14.81; // rpm target (wheel)
+        boolean distValid = !Double.isNaN(dist) && !Double.isInfinite(dist) && dist > 0 && dist < 200;
 
+        double adaptiveVal = 1200 + (dist - 15) * 14.81;
         double adaptiveTps = Conversions.rpmToTps(adaptiveVal, 28);
 
-        if (gamepad1.right_bumper) targetVel = CLOSE;
-        else if (gamepad1.b) targetVel = MID;
-        else if (gamepad1.y) targetVel = FAR;
-        else if (gamepad1.a) targetVel = adaptiveTps;
+        if (gamepad1.right_bumper) targetVel = ShooterConfig.getCloseTps();
+        else if (gamepad1.b) targetVel = ShooterConfig.getMidTps();
+        else if (gamepad1.y) targetVel = ShooterConfig.getFarTps();
+        else if (gamepad1.a && distValid) targetVel = adaptiveTps;
         else targetVel = DEFAULT;
 
         try {
             shooter.setVelocity(targetVel);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         double error = Math.abs(Conversions.tpsToRpm(shooter.getVelocity(), Conversions.TPR_6000_RPM) - Conversions.tpsToRpm(targetVel, Conversions.TPR_6000_RPM));
         if (error < 100 && targetVel != DEFAULT && transfer.getPower()==1.0) {
@@ -275,7 +266,8 @@ public class ColorSensorOpMode extends OpMode {
 
         shooterTelem.addf("Target", "%.0f", targetVel);
         shooterTelem.addf("Actual", "%.0f", shooter.getVelocity());
-        shooterTelem.addf("Range", "%.1f", dist);
+        shooterTelem.addf("Range", "%.1f in", dist);
+        shooterTelem.add("Adaptive Valid", distValid);
     }
     private double applyCurve(double input) {
         if (Math.abs(input) < TeleOpConfig.DRIVE_DEADZONE) return 0;

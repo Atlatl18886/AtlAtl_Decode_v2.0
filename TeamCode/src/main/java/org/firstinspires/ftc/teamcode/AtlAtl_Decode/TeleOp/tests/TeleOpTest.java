@@ -40,10 +40,10 @@ public class TeleOpTest extends OpMode {
 
     private List<LynxModule> allHubs;
 
-    private static final double CLOSE = ShooterConfig.CLOSE_TPS;
-    private static final double MID = ShooterConfig.MID_TPS;
-    private static final double FAR = ShooterConfig.FAR_TPS;
-    private static final double DEFAULT = ShooterConfig.DEFAULT;
+    private final double CLOSE = ShooterConfig.getCloseTps();
+    private final double MID = ShooterConfig.getMidTps();
+    private final double FAR = ShooterConfig.getFarTps();
+    private final double DEFAULT = ShooterConfig.DEFAULT;
     private final double SHOOTER_kP = ShooterConfig.shooter_Kp;
     private final double SHOOTER_kI = ShooterConfig.shooter_Ki;
     private final double SHOOTER_kD = ShooterConfig.shooter_Kd;
