@@ -145,11 +145,11 @@ public class ColorSensorOpMode extends OpMode {
     }
 
     private void Drive(double dt) {
-        if (gamepad1.options || gamepad1.start) {
+        if (gamepad1.options || gamepad1.share) {
             imu.resetYaw();
             headingOffset = 0;
         }
-        fieldCentricToggle.update(gamepad1.back);
+        fieldCentricToggle.update(gamepad1.ps);
         boolean isFieldCentric = fieldCentricToggle.get();
 
         double y = -gamepad1.left_stick_y;

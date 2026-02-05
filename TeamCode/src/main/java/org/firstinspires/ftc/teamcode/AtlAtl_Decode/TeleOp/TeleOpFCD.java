@@ -140,11 +140,11 @@ public class TeleOpFCD extends OpMode {
     }
 
     private void Drive(double dt) {
-        if (gamepad1.options || gamepad1.start) {
+        if (gamepad1.options || gamepad1.share) {
             imu.resetYaw();
             headingOffset = 0;
         }
-        fcdToggle.update(gamepad1.back);
+        fcdToggle.update(gamepad1.ps);
         boolean isFieldCentric = fcdToggle.get();
 
         double y = -gamepad1.left_stick_y;
