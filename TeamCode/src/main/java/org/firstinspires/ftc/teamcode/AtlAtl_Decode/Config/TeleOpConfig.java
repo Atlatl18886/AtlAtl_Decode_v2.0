@@ -10,7 +10,7 @@ public class TeleOpConfig {
     ///"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT), "TANH", "CUBIC_BLEND", "ADAPTIVE"
     ///for teleopbasic: LINEAR, EXPONENTIAL, QUADRATIC, TANH
     public static double DRIVE_DEADZONE = 0.07; // the first 7.5% of joystick movement is ignored, prevents accidentals
-    public static double AIM_TURN_SCALE = 0.15;  // turning slowdown when A is held
+    public static double AIM_TURN_SCALE = 0.15;  // slowdown when aim mode btn is held
 
     public static boolean USE_SLEW_LIMITING = true;
     public static boolean USE_PRIORITY_SUPPRESSION = true;

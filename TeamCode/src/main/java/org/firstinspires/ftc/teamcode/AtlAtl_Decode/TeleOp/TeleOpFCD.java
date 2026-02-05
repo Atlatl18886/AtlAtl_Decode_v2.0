@@ -112,8 +112,9 @@ public class TeleOpFCD extends OpMode {
     public void loop() {
         for (LynxModule module : allHubs) { module.clearBulkCache(); }
 
-        loopDt = loopTimer.seconds();
+        double rawDt = loopTimer.seconds();
         loopTimer.reset();
+        loopDt = Math.min(Math.max(rawDt, 0.0), 0.12);
 
         double loopMs = profiler.update();
         loopTelem.clear();

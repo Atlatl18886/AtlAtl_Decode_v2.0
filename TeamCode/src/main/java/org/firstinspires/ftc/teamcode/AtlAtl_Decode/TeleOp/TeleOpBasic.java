@@ -100,8 +100,9 @@ public class TeleOpBasic extends OpMode {
     public void loop() {
         for (LynxModule module : allHubs) { module.clearBulkCache(); }
 
-        loopDt = loopTimer.seconds();
+        double rawDt = loopTimer.seconds();
         loopTimer.reset();
+        loopDt = Math.min(Math.max(rawDt, 0.0), 0.12);
 
         double loopMs = profiler.update();
         loopTelem.clear();
@@ -178,7 +179,7 @@ public class TeleOpBasic extends OpMode {
 
         driveTelem.add("Preset", TeleOpConfig.DRIVE_PRESET);
         driveTelem.add("rate limiting?", TeleOpConfig.USE_SLEW_LIMITING);
-        driveTelem.add("priority supression?", TeleOpConfig.USE_PRIORITY_SUPPRESSION);
+        driveTelem.add("priority suppression?", TeleOpConfig.USE_PRIORITY_SUPPRESSION);
     }
 
     public void Intake() {

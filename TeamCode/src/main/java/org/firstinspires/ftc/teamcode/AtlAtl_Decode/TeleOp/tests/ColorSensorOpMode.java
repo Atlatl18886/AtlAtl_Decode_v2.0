@@ -117,8 +117,9 @@ public class ColorSensorOpMode extends OpMode {
     public void loop() {
         for (LynxModule module : allHubs) { module.clearBulkCache(); }
 
-        loopDt = loopTimer.seconds();
+        double rawDt = loopTimer.seconds();
         loopTimer.reset();
+        loopDt = Math.min(Math.max(rawDt, 0.0), 0.12);
 
         double loopMs = profiler.update();
         loopTelem.clear();
@@ -217,7 +218,7 @@ public class ColorSensorOpMode extends OpMode {
         rightFront.setPower(rf / denominator);
         rightBack.setPower(rb/ denominator);
 
-        driveTelem.add("Mode", "FIELD CENTRIC");
+        driveTelem.add("Mode", isFieldCentric ? "FIELD CENTRIC" : "ROBOT CENTRIC");
         driveTelem.add("Heading", Math.toDegrees(heading));
     }
 
