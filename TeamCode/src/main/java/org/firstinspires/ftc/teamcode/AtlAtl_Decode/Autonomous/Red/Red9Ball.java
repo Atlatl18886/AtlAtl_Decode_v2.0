@@ -1,4 +1,5 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Blue;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Red;
+
 
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
@@ -16,58 +17,54 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.shooter.S
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer.Transfer;
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Sequences;
-@Autonomous(name="Blue 9", group="RR Blue")
-public class Blue9Ball extends LinearOpMode {
+@Autonomous(name="Red 9", group="RR Red")
+public class Red9Ball extends LinearOpMode {
     @Override
     public void runOpMode() {
-        Pose2d initialPose = Constants.BLUE_CLOSE_START;
+        Pose2d initialPose = Constants.RED_CLOSE_START;
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
         Sequences sequences = new Sequences(hardwareMap);
         Intake intake = new Intake(hardwareMap);
         Transfer transfer = new Transfer(hardwareMap);
         Shooter shooter = new Shooter(hardwareMap);
 
-        double Xready = -12;
-        double Yready = -25;
 
         waitForStart();
         if (isStopRequested()) return;
 
-        Action preload = drive.actionBuilder(Constants.BLUE_CLOSE_START)
-                .strafeToLinearHeading(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE)
+        Action preload = drive.actionBuilder(Constants.RED_CLOSE_START)
+                .strafeToLinearHeading(Constants.RED_SHOOT, Constants.RED_ANGLE)
                 .waitSeconds(0.7)
                 .build();
 
-        Action getRow1 = drive.actionBuilder(new Pose2d(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE))
-                .strafeToLinearHeading(Constants.BLUE_READY1, Constants.BLUE_INTAKE_ANGLE)
-                .strafeTo(Constants.BLUE_ROW1)
+        Action getRow1 = drive.actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
+                .strafeToLinearHeading(Constants.RED_READY1, Constants.RED_INTAKE_ANGLE)
+                .strafeTo(Constants.RED_ROW1)
                 .waitSeconds(0.5)
                 .build();
 
-        Action scoreRow1 = drive.actionBuilder(new Pose2d(Constants.BLUE_ROW1, Constants.BLUE_INTAKE_ANGLE))
-                .strafeToLinearHeading(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE)
+        Action scoreRow1 = drive.actionBuilder(new Pose2d(Constants.RED_ROW1, Constants.RED_INTAKE_ANGLE))
+                .strafeToLinearHeading(Constants.RED_SHOOT, Constants.RED_ANGLE)
                 .build();
 
 
-        Action getRow2 = drive.actionBuilder(new Pose2d(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE))
-                .strafeToLinearHeading(Constants.BLUE_READY2, Constants.BLUE_INTAKE_ANGLE)
-                .strafeTo(Constants.BLUE_ROW2)
+        Action getRow2 = drive.actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
+                .strafeToLinearHeading(Constants.RED_READY2, Constants.RED_INTAKE_ANGLE)
+                .strafeTo(Constants.RED_ROW2)
                 .waitSeconds(0.5)
-
-                .strafeTo(new Vector2d(Constants.BLUE_READY2.x, Constants.BLUE_ROW2.y+15))
+                .strafeTo(new Vector2d(Constants.RED_READY2.x, Constants.RED_READY2.y+15))
                 .build();
 
-        Action driveToGate = drive.actionBuilder(new Pose2d(new Vector2d(Constants.BLUE_READY2.x, Constants.BLUE_ROW2.y+15), Constants.BLUE_INTAKE_ANGLE))
+        Action driveToGate = drive.actionBuilder(new Pose2d(new Vector2d(Constants.RED_READY2.x, Constants.RED_READY2.y+15), Constants.RED_INTAKE_ANGLE))
 
                 .waitSeconds(0.3)
-                .strafeToLinearHeading(Constants.BLUE_GATE, 0)
-                .strafeTo(Constants.BLUE_GATE_READY)
+                .strafeToLinearHeading(Constants.RED_GATE, 0)
+                .strafeTo(Constants.RED_GATE_READY)
                 .build();
 
-
-        Action scoreRow2 = drive.actionBuilder(new Pose2d(Constants.BLUE_GATE_READY, 0))
-                .strafeTo(Constants.BLUE_SHOOT)
-                .turnTo(Constants.BLUE_ANGLE)
+        Action scoreRow2 = drive.actionBuilder(new Pose2d(Constants.RED_GATE_READY, 0))
+                .strafeTo(Constants.RED_SHOOT)
+                .turnTo(Constants.RED_ANGLE)
                 .waitSeconds(0.5)
                 .build();
         Actions.runBlocking(

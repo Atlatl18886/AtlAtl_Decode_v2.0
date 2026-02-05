@@ -16,8 +16,8 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.shooter.S
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer.Transfer;
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Sequences;
-@Autonomous(name="Blue 9", group="RR Blue")
-public class Blue9Ball extends LinearOpMode {
+@Autonomous(name="Blue 12", group="RR Blue")
+public class Blue12Ball extends LinearOpMode {
     @Override
     public void runOpMode() {
         Pose2d initialPose = Constants.BLUE_CLOSE_START;
@@ -70,6 +70,19 @@ public class Blue9Ball extends LinearOpMode {
                 .turnTo(Constants.BLUE_ANGLE)
                 .waitSeconds(0.5)
                 .build();
+        Action getRow3 = drive.actionBuilder(new Pose2d(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE))
+                .turnTo(0)
+                .strafeTo(Constants.BLUE_READY3)
+                .turnTo(Constants.BLUE_INTAKE_ANGLE)
+                .strafeTo(Constants.BLUE_ROW3)
+                .waitSeconds(0.5)
+                .strafeTo(Constants.BLUE_READY3)
+                .build();
+
+        Action scoreRow3 = drive.actionBuilder(new Pose2d(Constants.BLUE_READY3, Constants.BLUE_INTAKE_ANGLE))
+                .strafeToLinearHeading(Constants.BLUE_SHOOT, Constants.BLUE_ANGLE)
+                .waitSeconds(0.5)
+                .build();
         Actions.runBlocking(
                 new SequentialAction(
                         preload,
@@ -92,6 +105,15 @@ public class Blue9Ball extends LinearOpMode {
                         ),
                         driveToGate,
                         scoreRow2,
+                        new ParallelAction(
+                                sequences.scoreSet()
+                        ),
+                        new ParallelAction(
+                                intake.setIntakePower(1.0),
+                                intake.setAntiPower(1.0),
+                                getRow3
+                        ),
+                        scoreRow3,
                         new ParallelAction(
                                 sequences.scoreSet()
                         ),
