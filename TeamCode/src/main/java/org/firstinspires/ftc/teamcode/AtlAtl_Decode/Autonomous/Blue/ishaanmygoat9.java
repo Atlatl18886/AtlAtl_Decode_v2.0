@@ -17,7 +17,7 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer.
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Sequences;
 @Autonomous(name="Blue 9", group="RR Blue")
-public class Blue9Ball extends LinearOpMode {
+public class ishaanmygoat9 extends LinearOpMode {
     @Override
     public void runOpMode() {
         Pose2d initialPose = Constants.BLUE_CLOSE_START;
