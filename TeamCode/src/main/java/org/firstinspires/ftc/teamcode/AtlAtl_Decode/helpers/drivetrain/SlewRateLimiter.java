@@ -17,6 +17,12 @@ public class SlewRateLimiter {
     }
 
     public double calculate(double target, double dt) {
+
+        if (dt <= 0) {
+            velocity = target;
+            return target;
+        }
+
         double clampedDt = Math.min(Math.max(dt, 0.015), 0.1);
         double error = target - velocity;
 

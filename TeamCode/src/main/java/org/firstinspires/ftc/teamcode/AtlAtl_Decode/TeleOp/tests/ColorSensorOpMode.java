@@ -161,6 +161,10 @@ public class ColorSensorOpMode extends OpMode {
             rx = error * 0.8; //TODO: TUNE
         }
 
+        y = deadbandRemap(y, TeleOpConfig.DRIVE_DEADZONE);
+        x = deadbandRemap(x, TeleOpConfig.DRIVE_DEADZONE);
+        rx = deadbandRemap(rx, TeleOpConfig.DRIVE_DEADZONE);
+
         y = applyCurve(y);
         x = applyCurve(x);
         rx = applyCurve(rx);
@@ -296,5 +300,10 @@ public class ColorSensorOpMode extends OpMode {
             default:
                 return input;
         }
+    }
+
+    private double deadbandRemap(double input, double deadzone) {
+        if (Math.abs(input) < deadzone) return 0.0;
+        return Math.signum(input) * (Math.abs(input) - deadzone) / (1.0 - deadzone);
     }
 }

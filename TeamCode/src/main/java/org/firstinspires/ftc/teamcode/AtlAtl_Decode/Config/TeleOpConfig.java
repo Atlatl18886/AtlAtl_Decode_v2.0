@@ -12,7 +12,7 @@ public class TeleOpConfig {
     public static double DRIVE_DEADZONE = 0.07; // the first 7.5% of joystick movement is ignored, prevents accidentals
     public static double AIM_TURN_SCALE = 0.15;  // turning slowdown when A is held
 
-    public static boolean USE_SLEW_LIMITING = false;
+    public static boolean USE_SLEW_LIMITING = true;
     public static boolean USE_PRIORITY_SUPPRESSION = true;
 
     //----------------------preset-based
