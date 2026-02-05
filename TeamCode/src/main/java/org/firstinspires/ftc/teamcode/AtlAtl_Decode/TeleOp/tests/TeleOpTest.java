@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests;
 
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
@@ -29,7 +29,7 @@ import java.util.List;
 @Disabled
 public class TeleOpTest extends OpMode {
     public enum DrivePreset {
-        LERP, QUADRATIC, CUBIC_BLEND, EXPONENTIAL, TANH, LINEAR, ADAPTIVE, NORMAL
+        LERP, QUADRATIC, CUBIC_BLEND, EXPONENTIAL, TANH, LINEAR, ADAPTIVE, CUBIC, SMOOTH, NORMAL
     }
 
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
@@ -40,10 +40,10 @@ public class TeleOpTest extends OpMode {
 
     private List<LynxModule> allHubs;
 
-    private static final double CLOSE = ShooterConfig.CLOSE_RPM;
-    private static final double MID = ShooterConfig.MID_RPM;
-    private static final double FAR = ShooterConfig.FAR_RPM;
-    private static final double DEFAULT = ShooterConfig.DEFAULT_RPM;
+    private static final double CLOSE = ShooterConfig.CLOSE_TPS;
+    private static final double MID = ShooterConfig.MID_TPS;
+    private static final double FAR = ShooterConfig.FAR_TPS;
+    private static final double DEFAULT = ShooterConfig.DEFAULT;
     private final double SHOOTER_kP = ShooterConfig.shooter_Kp;
     private final double SHOOTER_kI = ShooterConfig.shooter_Ki;
     private final double SHOOTER_kD = ShooterConfig.shooter_Kd;

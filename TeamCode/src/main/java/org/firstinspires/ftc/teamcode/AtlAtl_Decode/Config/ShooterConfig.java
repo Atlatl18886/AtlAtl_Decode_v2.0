@@ -9,13 +9,13 @@ public class ShooterConfig {
     /// when changing values in dash, change THESE
     public static double close = 1200;
     public static double mid = 1600;
-    public static double far = 3200;
+    public static double far = 1850;
 
     /// dont change these in dash
-    public static double MID_RPM = Conversions.rpmToTps(mid, 28);
-    public static double CLOSE_RPM = Conversions.rpmToTps(close,28);
-    public static double FAR_RPM = Conversions.rpmToTps(far, 28);
-    public static double DEFAULT_RPM = 0;
+    public static double MID_TPS = Conversions.rpmToTps(mid, 28);
+    public static double CLOSE_TPS = Conversions.rpmToTps(close,28);
+    public static double FAR_TPS = Conversions.rpmToTps(far, 28);
+    public static double DEFAULT = 0;
 
     // TODO: RETUNE kI
     public static double shooter_Kf = 16.3; // 1.0/rough max tps

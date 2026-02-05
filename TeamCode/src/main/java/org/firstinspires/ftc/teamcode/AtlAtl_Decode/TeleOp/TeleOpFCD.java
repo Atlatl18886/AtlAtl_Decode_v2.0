@@ -36,10 +36,10 @@ public class TeleOpFCD extends OpMode {
     private List<LynxModule> allHubs;
 
     private double targetVel = 0;
-    private static final double CLOSE = ShooterConfig.CLOSE_RPM;
-    private static final double MID = ShooterConfig.MID_RPM;
-    private static final double FAR = ShooterConfig.FAR_RPM;
-    private static final double DEFAULT = ShooterConfig.DEFAULT_RPM;
+    private static final double CLOSE = ShooterConfig.CLOSE_TPS;
+    private static final double MID = ShooterConfig.MID_TPS;
+    private static final double FAR = ShooterConfig.FAR_TPS;
+    private static final double DEFAULT = ShooterConfig.DEFAULT;
 
     private final double SHOOTER_kP = ShooterConfig.shooter_Kp;
     private final double SHOOTER_kI = ShooterConfig.shooter_Ki;
@@ -143,31 +143,36 @@ public class TeleOpFCD extends OpMode {
             headingOffset = 0;
         }
 
-
         double y = -gamepad1.left_stick_y;
-        double x = gamepad1.left_stick_x * 1.1;
+        double x = gamepad1.left_stick_x;
         double rx = gamepad1.right_stick_x;
+
+        //read heading
         double heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
         if (gamepad1.dpad_up || gamepad1.dpad_down) {
             double target = gamepad1.dpad_up ? 0 : Math.PI;
-            double current = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double error = AngleUnit.normalizeRadians(target - current);
-            rx = error * 0.8; //TODO: TUNE
+            double error = AngleUnit.normalizeRadians(target - heading);
+            rx = error * 0.8;
         }
 
-//field centric toggle
+        y= deadbandRemap(y, TeleOpConfig.DRIVE_DEADZONE);
+        x= deadbandRemap(x, TeleOpConfig.DRIVE_DEADZONE);
+        rx = deadbandRemap(rx, TeleOpConfig.DRIVE_DEADZONE);
+
+        y = applyCurve(y);
+        x = applyCurve(x);
+        rx = applyCurve(rx);
+
+        //field centric calc
         if (isFieldCentric) {
-            heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
             double rotX = x * Math.cos(-heading) - y * Math.sin(-heading);
             double rotY = x * Math.sin(-heading) + y * Math.cos(-heading);
             x = rotX;
             y = rotY;
         }
 
-        y = applyCurve(y);
-        x = applyCurve(x);
-        rx = applyCurve(rx);
+        x *= 1.1; //conteract slow strafe
 
         if (TeleOpConfig.USE_PRIORITY_SUPPRESSION) {
             double[] suppressed = suppressionHelper.apply(x, y, rx, false);
@@ -206,8 +211,7 @@ public class TeleOpFCD extends OpMode {
         leftBack.setPower(lb / denominator);
         rightFront.setPower(rf / denominator);
         rightBack.setPower(rb/ denominator);
-
-        driveTelem.add("Mode", "FIELD CENTRIC");
+        driveTelem.add("Mode", isFieldCentric ? "FIELD CENTRIC" : "ROBOT CENTRIC");
         driveTelem.add("Heading", Math.toDegrees(heading));
     }
 
@@ -261,10 +265,21 @@ public class TeleOpFCD extends OpMode {
 
             case "EXPONENTIAL":
                 return Math.pow(input, 3);
-
+            case "SMOOTH":
+                double x = (input + 1) / 2;
+                double y = x * x * (3 - 2 * x);
+                return 2 * y - 1;
+            case "CUBIC":
+                double k = TeleOpConfig.CUBIC_WEIGHT;
+                return ((1 - k) * input) + (k * Math.pow(input, 3));
             case "LINEAR":
             default:
                 return input;
         }
     }
+    private double deadbandRemap(double input, double deadzone) {
+        if (Math.abs(input) < deadzone) return 0.0;
+        return Math.signum(input) * (Math.abs(input) - deadzone) / (1.0 - deadzone);
+    }
+
 }

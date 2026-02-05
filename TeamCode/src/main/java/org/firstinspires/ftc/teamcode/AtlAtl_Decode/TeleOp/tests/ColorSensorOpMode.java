@@ -1,13 +1,18 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests;
 
 import com.qualcomm.hardware.lynx.LynxModule;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.ShooterConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.control.Toggle;
@@ -17,14 +22,16 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.LoopProfiler;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.SlewRateLimiter;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.PrioritySuppression;
 
-
 import java.util.List;
 
-@TeleOp(name="V2.5 TeleOp ROBO CENTRIC", group="Main")
-public class TeleOpBasic extends OpMode {
+@TeleOp(name="V2.5 TeleOp + both centric", group="Main")
+public class ColorSensorOpMode extends OpMode {
 
+    // Hardware
     private DcMotorEx leftFront, rightFront, leftBack, rightBack;
     private DcMotorEx intake, transfer, shooter, antiroller;
+    private IMU imu;
+    private DistanceSensor distanceSensor;
 
     private final Toggle intakeToggle = new Toggle();
     private TelemetryHelper driveTelem, intakeTelem, shooterTelem, debugTelem, loopTelem;
@@ -49,6 +56,8 @@ public class TeleOpBasic extends OpMode {
     private final ElapsedTime loopTimer = new ElapsedTime();
 
     private double loopDt;
+    private double headingOffset = 0;
+    private boolean isFieldCentric = true;
 
     @Override
     public void init() {
@@ -56,6 +65,14 @@ public class TeleOpBasic extends OpMode {
         for (LynxModule module : allHubs) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
         }
+
+        imu = hardwareMap.get(IMU.class, "imu");
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD));
+        imu.initialize(parameters);
+
+        distanceSensor = hardwareMap.get(DistanceSensor.class, "colorSensor");
 
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
@@ -126,20 +143,37 @@ public class TeleOpBasic extends OpMode {
     }
 
     private void Drive(double dt) {
-        double y = gamepad1.left_stick_y;
-        double x = -gamepad1.left_stick_x * 1.1;
-        double rx = -gamepad1.right_stick_x;
+        if (gamepad1.options || gamepad1.start) {
+            imu.resetYaw();
+            headingOffset = 0;
+        }
 
-        y= deadbandRemap(y, TeleOpConfig.DRIVE_DEADZONE);
-        x= deadbandRemap(x, TeleOpConfig.DRIVE_DEADZONE);
-        rx = deadbandRemap(rx, TeleOpConfig.DRIVE_DEADZONE);
+
+        double y = -gamepad1.left_stick_y;
+        double x = gamepad1.left_stick_x * 1.1;
+        double rx = gamepad1.right_stick_x;
+        double heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+
+        if (gamepad1.dpad_up || gamepad1.dpad_down) {
+            double target = gamepad1.dpad_up ? 0 : Math.PI;
+            double current = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double error = AngleUnit.normalizeRadians(target - current);
+            rx = error * 0.8; //TODO: TUNE
+        }
 
         y = applyCurve(y);
         x = applyCurve(x);
         rx = applyCurve(rx);
-//        y  = applyCurve(deadzoneRemap(y),  TeleOpConfig.FWD_PRESET);
-//        x  = applyCurve(deadzoneRemap(x),  TeleOpConfig.STRAFE_PRESET);
-//        rx = applyCurve(deadzoneRemap(rx), TeleOpConfig.TURN_PRESET);
+
+        //field centric toggle
+        if (isFieldCentric) {
+            heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double rotX = x * Math.cos(-heading) - y * Math.sin(-heading);
+            double rotY = x * Math.sin(-heading) + y * Math.cos(-heading);
+            x = rotX;
+            y = rotY;
+        }
+
 
         if (TeleOpConfig.USE_PRIORITY_SUPPRESSION) {
             double[] suppressed = suppressionHelper.apply(x, y, rx, false);
@@ -159,9 +193,12 @@ public class TeleOpBasic extends OpMode {
         }
 
         if (gamepad1.left_bumper) {
-            y *= TeleOpConfig.AIM_TURN_SCALE+0.1;
-            x *= TeleOpConfig.AIM_TURN_SCALE+0.1;
+            y *= TeleOpConfig.AIM_TURN_SCALE;
+            x *= TeleOpConfig.AIM_TURN_SCALE;
             rx *= TeleOpConfig.AIM_TURN_SCALE;
+        }
+        if (gamepad1.back) {
+            isFieldCentric = !isFieldCentric;
         }
 
         double lf = y + x + rx;
@@ -171,14 +208,13 @@ public class TeleOpBasic extends OpMode {
 
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1.0);
 
-        leftFront.setPower((lf / denominator));
-        leftBack.setPower((lb / denominator));
-        rightFront.setPower((rf / denominator));
-        rightBack.setPower((rb / denominator));
+        leftFront.setPower(lf / denominator);
+        leftBack.setPower(lb / denominator);
+        rightFront.setPower(rf / denominator);
+        rightBack.setPower(rb/ denominator);
 
-        driveTelem.add("Preset", TeleOpConfig.DRIVE_PRESET);
-        driveTelem.add("rate limiting?", TeleOpConfig.USE_SLEW_LIMITING);
-        driveTelem.add("priority supression?", TeleOpConfig.USE_PRIORITY_SUPPRESSION);
+        driveTelem.add("Mode", "FIELD CENTRIC");
+        driveTelem.add("Heading", Math.toDegrees(heading));
     }
 
     public void Intake() {
@@ -201,9 +237,26 @@ public class TeleOpBasic extends OpMode {
     }
 
     private void Shooter() {
+        double dist = distanceSensor.getDistance(DistanceUnit.INCH);
+        /***
+         adaptive shooter speed:
+         goal: Map distance (in) -> desired shooter wheel speed (RPM) via a linear fit
+            adaptiveVal = 1200 + (dist - 15) * 14.81
+            expands to:
+              adaptiveVal = (14.81 * dist) + (1200 - 14.81*15) ≈ 14.81*dist + 977.85
+            Meaning:
+              14.81 rpm per inch is the slope (per inch)
+              ~978 rpm represents base rpm at 0 inches
+              15" and 1200 RPM being example x and y cords
+         **/
+        double adaptiveVal = 1200 + (dist - 15) * 14.81; // rpm target (wheel)
+
+        double adaptiveTps = Conversions.rpmToTps(adaptiveVal, 28);
+
         if (gamepad1.right_bumper) targetVel = CLOSE;
         else if (gamepad1.b) targetVel = MID;
         else if (gamepad1.y) targetVel = FAR;
+        else if (gamepad1.a) targetVel = adaptiveTps;
         else targetVel = DEFAULT;
 
         try {
@@ -217,6 +270,7 @@ public class TeleOpBasic extends OpMode {
 
         shooterTelem.addf("Target", "%.0f", targetVel);
         shooterTelem.addf("Actual", "%.0f", shooter.getVelocity());
+        shooterTelem.addf("Range", "%.1f", dist);
     }
     private double applyCurve(double input) {
         if (Math.abs(input) < TeleOpConfig.DRIVE_DEADZONE) return 0;
@@ -237,15 +291,10 @@ public class TeleOpBasic extends OpMode {
                 return 2 * y - 1;
             case "CUBIC":
                 double k = TeleOpConfig.CUBIC_WEIGHT;
-                return ((1 - k) * input) + (k * Math.pow(input, 3));
+                return (1 - k) * input + k * Math.pow(input, 3);
             case "LINEAR":
             default:
                 return input;
         }
     }
-    private double deadbandRemap(double input, double deadzone) {
-        if (Math.abs(input) < deadzone) return 0.0;
-        return Math.signum(input) * (Math.abs(input) - deadzone) / (1.0 - deadzone);
-    }
-
 }

@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Config.TeleOpConfig;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.TeleOpTest.DrivePreset;
+import org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp.tests.TeleOpTest.DrivePreset;
 
 public class InputProcessor {
     private final AdaptiveGamma adaptiveGamma;
@@ -52,17 +52,19 @@ public class InputProcessor {
             case QUADRATIC:
                 return input * Math.abs(input);
 
-            case CUBIC_BLEND:
-                double w = TeleOpConfig.CUBIC_WEIGHT;
-                return (input * (1.0 - w)) + (Math.pow(input, 3) * w);
-
             case EXPONENTIAL:
                 return Math.pow(input, 3);
 
             case TANH:
                 double a = TeleOpConfig.TANH_A;
                 return Math.tanh(a * input) / Math.tanh(a);
-
+            case SMOOTH:
+                double x = (input + 1) / 2;
+                double y = x * x * (3 - 2 * x);
+                return 2 * y - 1;
+            case CUBIC:
+                double k = TeleOpConfig.CUBIC_WEIGHT;
+                return ((1 - k) * input) + (k * Math.pow(input, 3));
             case LERP:
             case LINEAR:
             case NORMAL:
