@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Red;
 
+
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.SequentialAction;
@@ -16,8 +17,8 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.shooter.S
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer.Transfer;
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Sequences;
-@Autonomous(name="Red 6", group="RR Red")
-public class Red6Ball extends LinearOpMode {
+@Autonomous(name="Red 9", group="RR Red")
+public class sigma9 extends LinearOpMode {
     @Override
     public void runOpMode() {
         Pose2d initialPose = Constants.RED_CLOSE_START;
@@ -27,32 +28,46 @@ public class Red6Ball extends LinearOpMode {
         Transfer transfer = new Transfer(hardwareMap);
         Shooter shooter = new Shooter(hardwareMap);
 
-        double Xready = -12;
-        double Yready = -25;
 
         waitForStart();
         if (isStopRequested()) return;
 
         Action preload = drive.actionBuilder(Constants.RED_CLOSE_START)
-                .strafeToLinearHeading(Constants.RED_SHOOT,Constants.RED_ANGLE)
+                .strafeToLinearHeading(Constants.RED_SHOOT, Constants.RED_ANGLE)
                 .waitSeconds(0.7)
                 .build();
-        Action balls = drive.actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
-                .turnTo(0)
-                .lineToX(Xready)
-                .turnTo(Math.toRadians(90))
+
+        Action getRow1 = drive.actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
+                .strafeToLinearHeading(Constants.RED_READY1, Constants.RED_INTAKE_ANGLE)
+                .strafeTo(Constants.RED_ROW1)
                 .waitSeconds(0.5)
-                .lineToY(50)
                 .build();
-        Action back = drive.actionBuilder(new Pose2d(Xready,50, Math.toRadians(90)))
-                .lineToY(Yready)
+
+        Action scoreRow1 = drive.actionBuilder(new Pose2d(Constants.RED_ROW1, Constants.RED_INTAKE_ANGLE))
+                .strafeToLinearHeading(Constants.RED_SHOOT, Constants.RED_ANGLE)
+                .build();
+
+
+        Action getRow2 = drive.actionBuilder(new Pose2d(Constants.RED_SHOOT, Constants.RED_ANGLE))
+                .strafeToLinearHeading(Constants.RED_READY2, Constants.RED_INTAKE_ANGLE)
+                .strafeTo(Constants.RED_ROW2)
                 .waitSeconds(0.5)
-                .turnTo(Math.toRadians(90))
+                .strafeTo(new Vector2d(Constants.RED_READY2.x, Constants.RED_READY2.y+15))
                 .build();
-        Action back2 = drive.actionBuilder(new Pose2d(Xready,Yready,Math.toRadians(90)))
-                .turnTo(Math.toRadians(0))
-                .lineToX(-31)
+
+        Action driveToGate = drive.actionBuilder(new Pose2d(new Vector2d(Constants.RED_READY2.x, Constants.RED_READY2.y+15), Constants.RED_INTAKE_ANGLE))
+
+                .waitSeconds(0.3)
+                .strafeToLinearHeading(Constants.RED_GATE, 0)
+                .waitSeconds(0.65)
+
+                .strafeTo(Constants.RED_GATE_READY)
+                .build();
+
+        Action scoreRow2 = drive.actionBuilder(new Pose2d(Constants.RED_GATE_READY, 0))
+                .strafeTo(Constants.RED_SHOOT)
                 .turnTo(Constants.RED_ANGLE)
+                .waitSeconds(0.5)
                 .build();
         Actions.runBlocking(
                 new SequentialAction(
@@ -63,15 +78,26 @@ public class Red6Ball extends LinearOpMode {
                         new ParallelAction(
                                 intake.setIntakePower(1.0),
                                 intake.setAntiPower(1.0),
-                                balls
+                                getRow1
                         ),
-                        back,
-                        back2,
+                        scoreRow1,
+                        new ParallelAction(
+                                sequences.scoreSet()
+                        ),
                         new ParallelAction(
                                 intake.setIntakePower(1.0),
                                 intake.setAntiPower(1.0),
+                                getRow2
+                        ),
+                        driveToGate,
+                        scoreRow2,
+                        new ParallelAction(
                                 sequences.scoreSet()
-                        )
+                        ),
+                        intake.setIntakePower(0),
+                        intake.setAntiPower(0),
+                        shooter.stop(),
+                        transfer.stop()
                 )
         );
     }

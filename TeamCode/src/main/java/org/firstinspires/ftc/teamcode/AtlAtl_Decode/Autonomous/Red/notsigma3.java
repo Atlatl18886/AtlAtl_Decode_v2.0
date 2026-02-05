@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer.
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Sequences;
 @Autonomous(name="Red Preloads(3)", group="RoadRunner")
-public class RedPreloads extends LinearOpMode {
+public class notsigma3 extends LinearOpMode {
     @Override
     public void runOpMode() {
         Pose2d initialPose = Constants.RED_CLOSE_START;
