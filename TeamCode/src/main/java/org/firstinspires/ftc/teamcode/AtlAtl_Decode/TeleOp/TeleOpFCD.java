@@ -174,6 +174,10 @@ public class TeleOpFCD extends OpMode {
             double rotY = x * Math.sin(-heading) + y * Math.cos(-heading);
             x = rotX;
             y = rotY;
+        } else {
+            x = -x;
+            y = -y;
+            rx = -rx;
         }
 
         x *= 1.1; //conteract slow strafe

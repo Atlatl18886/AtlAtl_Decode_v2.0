@@ -7,9 +7,12 @@ public class TeleOpConfig {
 
     // DRIVE CONFIG
     public static final String DRIVE_PRESET = "TANH";
-    ///"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT), "TANH", "CUBIC_BLEND", "ADAPTIVE"
-    ///for teleopbasic: LINEAR, EXPONENTIAL, QUADRATIC, TANH
-    public static double DRIVE_DEADZONE = 0.07; // the first 7.5% of joystick movement is ignored, prevents accidentals
+//    public static final String FWD_PRESET = "TANH";
+//    public static final String LAT_PRESET = "TANH";
+//    public static final String TURN_PRESET = "SMOOTH";
+    ///"QUADRATIC", "LINEAR"(default, original, raw input), "EXPONENTIAL", "LERP"(smooth linear, ADDS DRIFT), "TANH", "CUBIC"(cubic linear blend), "ADAPTIVE", "SMOOTH"(smoothcurve)
+    ///for teleopbasic: LINEAR, EXPONENTIAL, QUADRATIC, TANH, SMOOTH, CUBIC
+    public static double DRIVE_DEADZONE = 0.05; // the first 5% of joystick movement is ignored, prevents accidentals
     public static double AIM_TURN_SCALE = 0.15;  // slowdown when aim mode btn is held
 
     public static boolean USE_SLEW_LIMITING = true;

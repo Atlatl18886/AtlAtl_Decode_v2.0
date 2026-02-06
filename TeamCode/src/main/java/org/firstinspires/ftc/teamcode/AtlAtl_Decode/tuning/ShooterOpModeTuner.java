@@ -18,10 +18,10 @@ public class ShooterOpModeTuner extends OpMode {
 
     double tpr = Conversions.TPR_6000_RPM;
     //values before cosmo -- kP:580 kI:8.8 kD:4 kF:47.85
-    public static double SHOOTER_kP = 12;
-    public static double SHOOTER_kI = 0;
-    public static double SHOOTER_kD = 0.5;
-    public static double SHOOTER_kF = 19.5;
+    public static double SHOOTER_kP = 52;
+    public static double SHOOTER_kI = 0.9;
+    public static double SHOOTER_kD = 3;
+    public static double SHOOTER_kF = 21.3;
     //before pranav(p,i,d,f) - 15,1.7,0,15
     //after 12, 0, 0.5, 19.5
     public static double targetRPM = 2800; //max 3k

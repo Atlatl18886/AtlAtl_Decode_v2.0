@@ -134,12 +134,13 @@ public class TeleOpBasic extends OpMode {
         x= deadbandRemap(x, TeleOpConfig.DRIVE_DEADZONE);
         rx = deadbandRemap(rx, TeleOpConfig.DRIVE_DEADZONE);
 
-        y = applyCurve(y);
-        x = applyCurve(x);
-        rx = applyCurve(rx);
-//        y  = applyCurve(deadzoneRemap(y),  TeleOpConfig.FWD_PRESET);
-//        x  = applyCurve(deadzoneRemap(x),  TeleOpConfig.STRAFE_PRESET);
-//        rx = applyCurve(deadzoneRemap(rx), TeleOpConfig.TURN_PRESET);
+        y = applyCurve(y, TeleOpConfig.DRIVE_PRESET);
+        x = applyCurve(x, TeleOpConfig.DRIVE_PRESET);
+        rx = applyCurve(rx, TeleOpConfig.DRIVE_PRESET);
+
+//        y = applyCurve(y, TeleOpConfig.FWD_PRESET);
+//        x = applyCurve(x, TeleOpConfig.LAT_PRESET);
+//        rx = applyCurve(rx, TeleOpConfig.TURN_PRESET);
 
         if (TeleOpConfig.USE_PRIORITY_SUPPRESSION) {
             double[] suppressed = suppressionHelper.apply(x, y, rx, false);
@@ -219,10 +220,10 @@ public class TeleOpBasic extends OpMode {
         shooterTelem.addf("Target", "%.0f", targetVel);
         shooterTelem.addf("Actual", "%.0f", shooter.getVelocity());
     }
-    private double applyCurve(double input) {
+    private double applyCurve(double input, String preset) {
         if (Math.abs(input) < TeleOpConfig.DRIVE_DEADZONE) return 0;
 
-        switch (TeleOpConfig.DRIVE_PRESET) {
+        switch (preset) {
             case "TANH":
                 double a = TeleOpConfig.TANH_A;
                 return Math.tanh(a * input) / Math.tanh(a);

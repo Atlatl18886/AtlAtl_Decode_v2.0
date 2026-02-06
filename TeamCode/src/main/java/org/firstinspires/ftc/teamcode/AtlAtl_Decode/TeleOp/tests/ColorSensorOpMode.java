@@ -25,7 +25,7 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.drivetrain.PriorityS
 
 import java.util.List;
 
-@TeleOp(name="V2.5 TeleOp + both centric", group="Main")
+@TeleOp(name="Color sensor + fcd v2.5", group="Main")
 public class ColorSensorOpMode extends OpMode {
 
     // Hardware
@@ -179,6 +179,10 @@ public class ColorSensorOpMode extends OpMode {
             double rotY = x * Math.sin(-heading) + y * Math.cos(-heading);
             x = rotX;
             y = rotY;
+        } else {
+            x = -x;
+            y = -y;
+            rx = -rx;
         }
 
 

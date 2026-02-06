@@ -9,7 +9,7 @@ public class ShooterConfig {
     /// when changing values in dash, change THESE
     public static double close = 1200;
     public static double mid = 1600;
-    public static double far = 1850;
+    public static double far = 1740;
 
     /// dont change these in dash
     public static double DEFAULT = 0;
@@ -19,10 +19,14 @@ public class ShooterConfig {
     public static double getFarTps() { return Conversions.rpmToTps(far, 28); }
 
     // TODO: RETUNE kI
-    public static double shooter_Kf = 16.3; // 1.0/rough max tps
-    public static double shooter_Kp = 515;  // Adjust if reaction is too slow
-    public static double shooter_Ki = 1.65;
-    public static double shooter_Kd = 5;
+//    public static double shooter_Kf = 16.3; // 1.0/rough max tps
+//    public static double shooter_Kp = 515;  // Adjust if reaction is too slow
+//    public static double shooter_Ki = 1.65;
+//    public static double shooter_Kd = 5;
+    public static double shooter_Kf = 21.3; // 1.0/rough max tps
+    public static double shooter_Kp = 38;  // Adjust if reaction is too slow
+    public static double shooter_Ki = 0.4;
+    public static double shooter_Kd = 2.5;
 }
 
 /*
