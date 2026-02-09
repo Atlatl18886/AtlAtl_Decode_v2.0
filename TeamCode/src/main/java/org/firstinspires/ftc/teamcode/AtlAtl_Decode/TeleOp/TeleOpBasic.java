@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.AtlAtl_Decode.TeleOp;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -28,7 +30,9 @@ public class TeleOpBasic extends OpMode {
     private DcMotorEx intake, transfer, shooter, antiroller;
 
     private final Toggle intakeToggle = new Toggle();
-    private final ButtonHoldAction aimHold = new ButtonHoldAction();
+    private final Toggle reverseToggle = new Toggle();
+    private final ButtonHoldAction aimHoldRight = new ButtonHoldAction();
+    private final ButtonHoldAction aimHoldLeft = new ButtonHoldAction();
     private TelemetryHelper driveTelem, intakeTelem, shooterTelem, debugTelem, loopTelem;
     private final LoopProfiler profiler = new LoopProfiler();
     private List<LynxModule> allHubs;
@@ -55,6 +59,7 @@ public class TeleOpBasic extends OpMode {
         for (LynxModule module : allHubs) {
             module.setBulkCachingMode(LynxModule.BulkCachingMode.MANUAL);
         }
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
@@ -159,11 +164,14 @@ public class TeleOpBasic extends OpMode {
             turnLimiter.reset();
         }
 
-        aimHold.update(gamepad1.left_bumper);
-        if (aimHold.isHeld()) {
+        aimHoldRight.update(gamepad1.right_stick_button);
+        if (aimHoldRight.isHeld()) {
+            rx *= TeleOpConfig.AIM_TURN_SCALE;
+        }
+        aimHoldLeft.update(gamepad1.left_stick_button);
+        if (aimHoldLeft.isHeld()) {
             y *= TeleOpConfig.AIM_TURN_SCALE+0.1;
             x *= TeleOpConfig.AIM_TURN_SCALE+0.1;
-            rx *= TeleOpConfig.AIM_TURN_SCALE;
         }
 
         double lf = y + x + rx;
@@ -184,18 +192,33 @@ public class TeleOpBasic extends OpMode {
     }
 
     public void Intake() {
-        boolean prevState = intakeToggle.get();
-        boolean intakeActive = intakeToggle.updateTrigger(gamepad1.left_trigger, 0.1);
 
-        if (intakeActive != prevState) {
-            intakeTelem.add("", intakeActive ? "Intake toggled ON" : "Intake toggled OFF");
+        boolean intakeActive = intakeToggle.updateTrigger(gamepad1.left_trigger, 0.1);
+        boolean reverseActive = reverseToggle.updateTrigger(gamepad1.left_bumper ? 1.0 : 0.0, 0.5);
+
+        double iP;
+        double aP;
+        String stateName;
+
+        if (reverseActive) {
+            iP = -1.0;
+            aP = -0.6;
+            stateName = "REVERSING";
+        } else if (intakeActive) {
+            iP = 1.0;
+            aP = 0.6;
+            stateName = "INTAKING";
+        } else {
+            iP = 0.35;
+            aP = 0.5;
+            stateName = "IDLE";
         }
 
-        intake.setPower(intakeActive ? 1.0 : 0.35);
-        antiroller.setPower(intakeActive ? 0.6 : 0.5);
+        intake.setPower(iP);
+        antiroller.setPower(aP);
 
-        intakeTelem.add("state", intakeActive);
-        intakeTelem.addf("power", "%.2f", intake.getPower());
+        intakeTelem.add("State", stateName);
+        intakeTelem.addf("Power", "%.2f", intake.getPower());
     }
     private void Transfer() {
         double p = (gamepad1.right_trigger > 0.1) ? 1.0 : -0.4;
@@ -219,6 +242,9 @@ public class TeleOpBasic extends OpMode {
 
         shooterTelem.addf("Target", "%.0f", targetVel);
         shooterTelem.addf("Actual", "%.0f", shooter.getVelocity());
+//        telemetry.addData("[0] targetRPM", "%.0f", targetVel);
+//        telemetry.addData("[1] currentRPM", "%.0f", Math.abs(shooter.getVelocity()));
+//        telemetry.addData("[2] error: ", "%.0f", Math.abs(error));
     }
     private double applyCurve(double input, String preset) {
         if (Math.abs(input) < TeleOpConfig.DRIVE_DEADZONE) return 0;

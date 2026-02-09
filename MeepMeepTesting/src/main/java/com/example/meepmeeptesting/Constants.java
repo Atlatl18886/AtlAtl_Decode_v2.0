@@ -5,8 +5,8 @@ import com.acmerobotics.roadrunner.Vector2d;
 
 public interface Constants {
 
-    int CLOSE_VELOCITY = 1050;
-    int FAR_VELOCITY = 1500;
+    int rpm3 = 1250;
+    int rpmelse = 1480;
 
 //red artifacts
     Vector2d RED_READY1 = new Vector2d(-12, 25);
@@ -51,16 +51,14 @@ public interface Constants {
     double RED_INTAKE_ANGLE = Math.toRadians(90);
 
 
-    //starting poses
-
-    Pose2d RED_CLOSE_START = new Pose2d(-60, 38, Math.toRadians(0));
-
-    Pose2d BLUE_CLOSE_START = new Pose2d(-60, -38, Math.toRadians(0));
-
     //shooting poses
     double BLUE_ANGLE = Math.toRadians(50);
     double RED_ANGLE = Math.toRadians(-50);
     Vector2d RED_SHOOT = new Vector2d(-31,25);
     Vector2d BLUE_SHOOT = new Vector2d(-31,-25);
+
+    Pose2d RED_CLOSE_START = new Pose2d(-48, 48, RED_ANGLE);
+
+    Pose2d BLUE_CLOSE_START = new Pose2d(-48, -48, BLUE_ANGLE);
 
 }

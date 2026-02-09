@@ -19,7 +19,7 @@ public class Shooter {
 
     public static double TICKS_PER_REV = 28.0;
     public static double MAX_RPM = 6000.0;
-    public static double VELOCITY_TOLERANCE = 50.0;
+    public static double VELOCITY_TOLERANCE = 30.0;
 
     public static double kP = ShooterConfig.shooter_Kp;
     public static double kI = ShooterConfig.shooter_Ki;

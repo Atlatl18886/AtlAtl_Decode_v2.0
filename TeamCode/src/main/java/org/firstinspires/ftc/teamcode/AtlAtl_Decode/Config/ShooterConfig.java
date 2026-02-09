@@ -7,11 +7,11 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.util.Conversions;
 @Config
 public class ShooterConfig {
     /// when changing values in dash, change THESE
-    public static double close = 1200;
+    public static double close = 1250;
     public static double mid = 1600;
     public static double far = 1740;
 
-    /// dont change these in dash
+    /// dont change 15/19 in dash
     public static double DEFAULT = 0;
 
     public static double getCloseTps() { return Conversions.rpmToTps(close, 28); }
@@ -20,13 +20,13 @@ public class ShooterConfig {
 
     // TODO: RETUNE kI
 //    public static double shooter_Kf = 16.3; // 1.0/rough max tps
-//    public static double shooter_Kp = 515;  // Adjust if reaction is too slow
-//    public static double shooter_Ki = 1.65;
-//    public static double shooter_Kd = 5;
-    public static double shooter_Kf = 21.3; // 1.0/rough max tps
-    public static double shooter_Kp = 38;  // Adjust if reaction is too slow
-    public static double shooter_Ki = 0.4;
-    public static double shooter_Kd = 2.5;
+//    public static double shooter_Kp = 245;  // Adjust if reaction is too slow
+//    public static double shooter_Ki = 1.2;
+//    public static double shooter_Kd = 4.2;
+    public static double shooter_Kf = 16.3; // 1.0/rough max tps
+    public static double shooter_Kp = 330;  // Adjust if reaction is too slow
+    public static double shooter_Ki = 1;
+    public static double shooter_Kd = 6;
 }
 
 /*

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Blue;
+package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous;
 
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
@@ -10,35 +10,26 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.acmerobotics.roadrunner.Pose2d;
 
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Constants;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.intake.Intake;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.shooter.Shooter;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer.Transfer;
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
-import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Sequences;
-@Autonomous(name="Blue 3", group="RR Blue")
-public class BluePreloads extends LinearOpMode {
+
+@Autonomous(name="farmove", group="")
+public class far_move extends LinearOpMode {
     @Override
     public void runOpMode() {
         Pose2d initialPose = Constants.BLUE_CLOSE_START;
         MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
         Sequences sequences = new Sequences(hardwareMap);
-        Intake intake = new Intake(hardwareMap);
-        Transfer transfer = new Transfer(hardwareMap);
-        Shooter shooter = new Shooter(hardwareMap);
 
         waitForStart();
         if (isStopRequested()) return;
-        Action preload = drive.actionBuilder(Constants.BLUE_CLOSE_START)
-                .strafeToLinearHeading(new Vector2d(-43.5,-45), Constants.BLUE_ANGLE)
-                .waitSeconds(0.7)
+        Action move = drive.actionBuilder(Constants.BLUE_CLOSE_START)
                 .build();
         Actions.runBlocking(
                 new SequentialAction(
-                        preload,
-                        new ParallelAction(
-                                sequences.scoreSet(Constants.rpm3)
-                        )
+                        move
                 )
         );
     }

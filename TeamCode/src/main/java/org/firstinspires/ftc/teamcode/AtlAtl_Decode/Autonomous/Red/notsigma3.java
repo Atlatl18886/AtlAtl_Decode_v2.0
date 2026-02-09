@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Red;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
@@ -15,7 +16,7 @@ import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.shooter.S
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.helpers.roadrunner.transfer.Transfer;
 import org.firstinspires.ftc.teamcode.Roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.AtlAtl_Decode.Autonomous.Sequences;
-@Autonomous(name="Red Preloads(3)", group="RoadRunner")
+@Autonomous(name="Red 3)", group="RR Red")
 public class notsigma3 extends LinearOpMode {
     @Override
     public void runOpMode() {
@@ -29,14 +30,14 @@ public class notsigma3 extends LinearOpMode {
         waitForStart();
         if (isStopRequested()) return;
         Action preload = drive.actionBuilder(Constants.RED_CLOSE_START)
-                .strafeToLinearHeading(Constants.RED_SHOOT,Constants.RED_ANGLE)
+                .strafeToLinearHeading(new Vector2d(-43.5,45),Constants.RED_ANGLE)
                 .waitSeconds(0.7)
                 .build();
         Actions.runBlocking(
                 new SequentialAction(
                         preload,
                         new ParallelAction(
-                                sequences.scoreSet()
+                                sequences.scoreSet(Constants.rpm3)
                         )
                 )
         );
