@@ -35,8 +35,9 @@ public class ColorSensorOpMode extends OpMode {
     private DistanceSensor distanceSensor;
 
     private final Toggle intakeToggle = new Toggle();
+    private final ButtonHoldAction aimHoldRight = new ButtonHoldAction();
+    private final ButtonHoldAction aimHoldLeft = new ButtonHoldAction();
     private final Toggle fieldCentricToggle = new Toggle(true);
-    private final ButtonHoldAction aimHold = new ButtonHoldAction();
     private TelemetryHelper driveTelem, intakeTelem, shooterTelem, debugTelem, loopTelem;
     private final LoopProfiler profiler = new LoopProfiler();
     private List<LynxModule> allHubs;
@@ -203,11 +204,14 @@ public class ColorSensorOpMode extends OpMode {
             turnLimiter.reset();
         }
 
-        aimHold.update(gamepad1.left_bumper);
-        if (aimHold.isHeld()) {
-            y *= TeleOpConfig.AIM_TURN_SCALE;
-            x *= TeleOpConfig.AIM_TURN_SCALE;
+        aimHoldRight.update(gamepad1.right_stick_button);
+        if (aimHoldRight.isHeld()) {
             rx *= TeleOpConfig.AIM_TURN_SCALE;
+        }
+        aimHoldLeft.update(gamepad1.left_stick_button);
+        if (aimHoldLeft.isHeld()) {
+            y *= TeleOpConfig.AIM_TURN_SCALE+0.1;
+            x *= TeleOpConfig.AIM_TURN_SCALE+0.1;
         }
 
         double lf = y + x + rx;
